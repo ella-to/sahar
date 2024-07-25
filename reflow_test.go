@@ -36,8 +36,8 @@ func TestUpdateChildrenWidthHeight(t *testing.T) {
 				Height: 100,
 			},
 			expectedNode: &sahar.Node{
-				Width:  90,
-				Height: 90,
+				Width:  100,
+				Height: 100,
 				Margin: [4]float64{5, 5, 5, 5},
 				Type:   sahar.Stack,
 			},
@@ -56,8 +56,8 @@ func TestUpdateChildrenWidthHeight(t *testing.T) {
 			},
 			expectedNode: &sahar.Node{
 				Type:   sahar.Stack,
-				Width:  90,
-				Height: 90,
+				Width:  100,
+				Height: 100,
 				Margin: [4]float64{5, 5, 5, 5},
 				Children: []*sahar.Node{
 					{
@@ -88,8 +88,8 @@ func TestUpdateChildrenWidthHeight(t *testing.T) {
 			},
 			expectedNode: &sahar.Node{
 				Type:   sahar.Stack,
-				Width:  90,
-				Height: 90,
+				Width:  100,
+				Height: 100,
 				Margin: [4]float64{5, 5, 5, 5},
 				Children: []*sahar.Node{
 					{
@@ -147,6 +147,50 @@ func TestUpdateChildrenWidthHeight(t *testing.T) {
 					{
 						Width:  30,
 						Height: 90,
+						Type:   sahar.Stack,
+					},
+				},
+			},
+		},
+		{
+			node: &sahar.Node{
+				Type:   sahar.Stack,
+				Width:  200,
+				Height: 200,
+				Margin: [4]float64{5, 5, 5, 5},
+				Children: []*sahar.Node{
+					{
+						Type:   sahar.Stack,
+						Height: 50,
+					},
+					{
+						Type: sahar.Stack,
+					},
+					{
+						Type:   sahar.Stack,
+						Height: 50,
+					},
+				},
+			},
+			expectedNode: &sahar.Node{
+				Type:   sahar.Stack,
+				Width:  200,
+				Height: 200,
+				Margin: [4]float64{5, 5, 5, 5},
+				Children: []*sahar.Node{
+					{
+						Width:  190,
+						Height: 50,
+						Type:   sahar.Stack,
+					},
+					{
+						Width:  190,
+						Height: 90,
+						Type:   sahar.Stack,
+					},
+					{
+						Width:  190,
+						Height: 50,
 						Type:   sahar.Stack,
 					},
 				},
@@ -154,11 +198,9 @@ func TestUpdateChildrenWidthHeight(t *testing.T) {
 		},
 	}
 
-	for i, tc := range testCases {
+	for _, tc := range testCases {
 		sahar.UpdateChildrenWidthHeight(tc.node)
 		assert.Equal(t, tc.expectedNode, tc.node)
-
-		drawPdf(t, tc.node, i)
 	}
 }
 

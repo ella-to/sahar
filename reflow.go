@@ -41,19 +41,21 @@ func UpdateChildrenWidthHeight(node *Node) {
 		}
 	}
 
-	childrenCount := len(children)
-	autoWidth := (parentWidth - occupiedWidth) / float64(childrenCount)
-	autoHeight := (parentHeight - occupiedHeight) / float64(childrenCount)
-
-	for _, child := range noWidths {
-		if child.Width == 0 {
-			child.Width = autoWidth
+	if len(noWidths) > 0 {
+		autoWidth := (parentWidth - occupiedWidth) / float64(len(noWidths))
+		for _, child := range noWidths {
+			if child.Width == 0 {
+				child.Width = autoWidth
+			}
 		}
 	}
 
-	for _, child := range noHeights {
-		if child.Height == 0 {
-			child.Height = autoHeight
+	if len(noHeights) > 0 {
+		autoHeight := (parentHeight - occupiedHeight) / float64(len(noHeights))
+		for _, child := range noHeights {
+			if child.Height == 0 {
+				child.Height = autoHeight
+			}
 		}
 	}
 
@@ -108,4 +110,10 @@ func UpdateChildrenXY(node *Node, isRoot bool) {
 
 		UpdateChildrenXY(child, false)
 	}
+}
+
+func Reflow(node *Node) {
+	UpdateChildrenWidthHeight(node)
+	UpdateRootXY(node)
+	UpdateChildrenXY(node, true)
 }
