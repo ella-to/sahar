@@ -23,425 +23,433 @@ func drawPdf(t *testing.T, node *sahar.Node, i int) error {
 	return err
 }
 
-func TestUpdateChildrenWidthHeight(t *testing.T) {
-	testCases := []struct {
-		node         *sahar.Node
-		expectedNode *sahar.Node
-	}{
-		{
-			node: &sahar.Node{
-				Type:   sahar.Stack,
-				Margin: [4]float64{5, 5, 5, 5},
-				Width:  100,
-				Height: 100,
-			},
-			expectedNode: &sahar.Node{
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				Type:   sahar.Stack,
-			},
-		},
-		{
-			node: &sahar.Node{
-				Type:   sahar.Stack,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				Children: []*sahar.Node{
-					{
-						Type: sahar.Stack,
-					},
-				},
-			},
-			expectedNode: &sahar.Node{
-				Type:   sahar.Stack,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				Children: []*sahar.Node{
-					{
-						Width:  90,
-						Height: 90,
-						Type:   sahar.Stack,
-					},
-				},
-			},
-		},
-		{
-			node: &sahar.Node{
-				Type:   sahar.Stack,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				Children: []*sahar.Node{
-					{
-						Type: sahar.Stack,
-					},
-					{
-						Type: sahar.Stack,
-					},
-					{
-						Type: sahar.Stack,
-					},
-				},
-			},
-			expectedNode: &sahar.Node{
-				Type:   sahar.Stack,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				Children: []*sahar.Node{
-					{
-						Width:  90,
-						Height: 30,
-						Type:   sahar.Stack,
-					},
-					{
-						Width:  90,
-						Height: 30,
-						Type:   sahar.Stack,
-					},
-					{
-						Width:  90,
-						Height: 30,
-						Type:   sahar.Stack,
-					},
-				},
-			},
-		},
-		{
-			node: &sahar.Node{
-				Type:   sahar.Group,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				Children: []*sahar.Node{
-					{
-						Type: sahar.Stack,
-					},
-					{
-						Type: sahar.Stack,
-					},
-					{
-						Type: sahar.Stack,
-					},
-				},
-			},
-			expectedNode: &sahar.Node{
-				Type:   sahar.Group,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				Children: []*sahar.Node{
-					{
-						Width:  30,
-						Height: 90,
-						Type:   sahar.Stack,
-					},
-					{
-						Width:  30,
-						Height: 90,
-						Type:   sahar.Stack,
-					},
-					{
-						Width:  30,
-						Height: 90,
-						Type:   sahar.Stack,
-					},
-				},
-			},
-		},
-		{
-			node: &sahar.Node{
-				Type:   sahar.Stack,
-				Width:  200,
-				Height: 200,
-				Margin: [4]float64{5, 5, 5, 5},
-				Children: []*sahar.Node{
-					{
-						Type:   sahar.Stack,
-						Height: 50,
-					},
-					{
-						Type: sahar.Stack,
-					},
-					{
-						Type:   sahar.Stack,
-						Height: 50,
-					},
-				},
-			},
-			expectedNode: &sahar.Node{
-				Type:   sahar.Stack,
-				Width:  200,
-				Height: 200,
-				Margin: [4]float64{5, 5, 5, 5},
-				Children: []*sahar.Node{
-					{
-						Width:  190,
-						Height: 50,
-						Type:   sahar.Stack,
-					},
-					{
-						Width:  190,
-						Height: 90,
-						Type:   sahar.Stack,
-					},
-					{
-						Width:  190,
-						Height: 50,
-						Type:   sahar.Stack,
-					},
-				},
-			},
-		},
-	}
+func TestResize(t *testing.T) {
 
-	for _, tc := range testCases {
-		sahar.UpdateChildrenWidthHeight(tc.node)
-		assert.Equal(t, tc.expectedNode, tc.node)
-	}
+	t.Run("Test Size on a Stack", func(t *testing.T) {
+		b := &sahar.Node{
+			Type:   sahar.Stack,
+			Width:  100,
+			Height: 100,
+		}
+
+		expexted := &sahar.Node{
+			Type:   sahar.Stack,
+			Width:  100,
+			Height: 100,
+		}
+
+		err := sahar.Resize(b)
+		assert.NoError(t, err)
+		assert.Equal(t, expexted, b)
+	})
+
+	t.Run("Test Size on a Stack with 2 elements without any width and height defined", func(t *testing.T) {
+		b := &sahar.Node{
+			Type:   sahar.Stack,
+			Width:  100,
+			Height: 100,
+
+			Children: []*sahar.Node{
+				{
+					Type: sahar.Stack,
+				},
+				{
+					Type: sahar.Stack,
+				},
+			},
+		}
+
+		expexted := &sahar.Node{
+			Type:   sahar.Stack,
+			Width:  100,
+			Height: 100,
+
+			Children: []*sahar.Node{
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 50,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 50,
+				},
+			},
+		}
+
+		err := sahar.Resize(b)
+		assert.NoError(t, err)
+		assert.Equal(t, expexted, b)
+	})
+
+	t.Run("Test Size on a Group with 2 elements with width and height defined", func(t *testing.T) {
+		b := &sahar.Node{
+			Type:   sahar.Group,
+			Width:  100,
+			Height: 100,
+
+			Children: []*sahar.Node{
+				{
+					Type: sahar.Stack,
+				},
+				{
+					Type: sahar.Stack,
+				},
+			},
+		}
+
+		expexted := &sahar.Node{
+			Type:   sahar.Group,
+			Width:  100,
+			Height: 100,
+
+			Children: []*sahar.Node{
+				{
+					Type:   sahar.Stack,
+					Width:  50,
+					Height: 100,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  50,
+					Height: 100,
+				},
+			},
+		}
+
+		err := sahar.Resize(b)
+		assert.NoError(t, err)
+		assert.Equal(t, expexted, b)
+	})
+
+	t.Run("Test Size on a Stack with 3 elements with 2 define widths defined", func(t *testing.T) {
+		b := &sahar.Node{
+			Type:   sahar.Stack,
+			Width:  100,
+			Height: 100,
+
+			Children: []*sahar.Node{
+				{
+					Type:  sahar.Stack,
+					Width: 50,
+				},
+				{
+					Type:  sahar.Stack,
+					Width: 60,
+				},
+				{
+					Type: sahar.Stack,
+				},
+			},
+		}
+
+		expexted := &sahar.Node{
+			Type:   sahar.Stack,
+			Width:  100,
+			Height: 100,
+
+			Children: []*sahar.Node{
+				{
+					Type:   sahar.Stack,
+					Width:  50,
+					Height: 33.333333333333336,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  60,
+					Height: 33.333333333333336,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+				},
+			},
+		}
+
+		err := sahar.Resize(b)
+		assert.NoError(t, err)
+		assert.Equal(t, expexted, b)
+	})
 }
 
-func TestUpdateChildrenXY(t *testing.T) {
-	testCases := []struct {
-		node         *sahar.Node
-		expectedNode *sahar.Node
-	}{
-		{
-			node: &sahar.Node{
-				Type:   sahar.Stack,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-			},
-			expectedNode: &sahar.Node{
-				Type:   sahar.Stack,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				X:      5,
-				Y:      5,
-			},
-		},
-		{
-			node: &sahar.Node{
-				Type:   sahar.Stack,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				Children: []*sahar.Node{
-					{
-						Type: sahar.Stack,
-					},
-					{
-						Type: sahar.Stack,
-					},
-					{
-						Type: sahar.Stack,
-					},
-				},
-			},
-			expectedNode: &sahar.Node{
-				Type:   sahar.Stack,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				X:      5,
-				Y:      5,
-				Children: []*sahar.Node{
-					{
-						Width:  90,
-						Height: 30,
-						Type:   sahar.Stack,
-						X:      5,
-						Y:      5,
-					},
-					{
-						Width:  90,
-						Height: 30,
-						Type:   sahar.Stack,
-						X:      5,
-						Y:      35,
-					},
-					{
-						Width:  90,
-						Height: 30,
-						Type:   sahar.Stack,
-						X:      5,
-						Y:      65,
-					},
-				},
-			},
-		},
-		{
-			node: &sahar.Node{
-				Type:   sahar.Group,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				Children: []*sahar.Node{
-					{
-						Type: sahar.Stack,
-					},
-					{
-						Type: sahar.Stack,
-					},
-					{
-						Type: sahar.Stack,
-					},
-				},
-			},
-			expectedNode: &sahar.Node{
-				Type:   sahar.Group,
-				Width:  100,
-				Height: 100,
-				Margin: [4]float64{5, 5, 5, 5},
-				X:      5,
-				Y:      5,
-				Children: []*sahar.Node{
-					{
-						Width:  30,
-						Height: 90,
-						Type:   sahar.Stack,
-						X:      5,
-						Y:      5,
-					},
-					{
-						Width:  30,
-						Height: 90,
-						Type:   sahar.Stack,
-						X:      35,
-						Y:      5,
-					},
-					{
-						Width:  30,
-						Height: 90,
-						Type:   sahar.Stack,
-						X:      65,
-						Y:      5,
-					},
-				},
-			},
-		},
-		{
-			node: &sahar.Node{
-				Type:                sahar.Stack,
-				Width:               100,
-				Height:              100,
-				Margin:              [4]float64{5, 5, 5, 5},
-				HorizontalAlignment: sahar.Center,
-				Children: []*sahar.Node{
-					{
-						Type:  sahar.Stack,
-						Width: 10,
-					},
-					{
-						Type:  sahar.Stack,
-						Width: 10,
-					},
-					{
-						Type:  sahar.Stack,
-						Width: 10,
-					},
-				},
-			},
-			expectedNode: &sahar.Node{
-				Type:                sahar.Stack,
-				Width:               100,
-				Height:              100,
-				Margin:              [4]float64{5, 5, 5, 5},
-				X:                   5,
-				Y:                   5,
-				HorizontalAlignment: sahar.Center,
-				Children: []*sahar.Node{
-					{
-						Width:  10,
-						Height: 30,
-						Type:   sahar.Stack,
-						X:      45,
-						Y:      5,
-					},
-					{
-						Width:  10,
-						Height: 30,
-						Type:   sahar.Stack,
-						X:      45,
-						Y:      35,
-					},
-					{
-						Width:  10,
-						Height: 30,
-						Type:   sahar.Stack,
-						X:      45,
-						Y:      65,
-					},
-				},
-			},
-		},
-		{
-			node: &sahar.Node{
-				Type:              sahar.Group,
-				Width:             100,
-				Height:            100,
-				Margin:            [4]float64{5, 5, 5, 5},
-				VerticalAlignment: sahar.Middle,
-				Children: []*sahar.Node{
-					{
-						Type:   sahar.Stack,
-						Height: 10,
-					},
-					{
-						Type:   sahar.Stack,
-						Height: 10,
-					},
-					{
-						Type:   sahar.Stack,
-						Height: 10,
-					},
-				},
-			},
-			expectedNode: &sahar.Node{
-				Type:              sahar.Group,
-				Width:             100,
-				Height:            100,
-				Margin:            [4]float64{5, 5, 5, 5},
-				X:                 5,
-				Y:                 5,
-				VerticalAlignment: sahar.Middle,
-				Children: []*sahar.Node{
-					{
-						Width:  30,
-						Height: 10,
-						Type:   sahar.Stack,
-						X:      5,
-						Y:      45,
-					},
-					{
-						Width:  30,
-						Height: 10,
-						Type:   sahar.Stack,
-						X:      35,
-						Y:      45,
-					},
-					{
-						Width:  30,
-						Height: 10,
-						Type:   sahar.Stack,
-						X:      65,
-						Y:      45,
-					},
-				},
-			},
-		},
-	}
+func TestAlignment(t *testing.T) {
+	t.Run("Test Alignment on a Stack", func(t *testing.T) {
+		b := &sahar.Node{
+			Type:   sahar.Stack,
+			Width:  100,
+			Height: 100,
+		}
 
-	for i, tc := range testCases {
-		sahar.UpdateChildrenWidthHeight(tc.node)
-		sahar.UpdateRootXY(tc.node)
-		sahar.UpdateChildrenXY(tc.node, true)
-		assert.Equal(t, tc.expectedNode, tc.node)
-		drawPdf(t, tc.node, i)
-	}
+		expexted := &sahar.Node{
+			Type:   sahar.Stack,
+			Width:  100,
+			Height: 100,
+		}
+
+		err := sahar.Resize(b)
+		assert.NoError(t, err)
+		err = sahar.Alignment(b)
+		assert.NoError(t, err)
+		assert.Equal(t, expexted, b)
+	})
+
+	t.Run("Test Alignment on a Group", func(t *testing.T) {
+		b := &sahar.Node{
+			Type:   sahar.Group,
+			Width:  100,
+			Height: 100,
+		}
+
+		expexted := &sahar.Node{
+			Type:   sahar.Group,
+			Width:  100,
+			Height: 100,
+		}
+
+		err := sahar.Resize(b)
+		assert.NoError(t, err)
+		err = sahar.Alignment(b)
+		assert.NoError(t, err)
+		assert.Equal(t, expexted, b)
+	})
+
+	t.Run("Test Alignment on a Stack with 3 children and TopLeft", func(t *testing.T) {
+		b := &sahar.Node{
+			Type:                sahar.Stack,
+			Width:               100,
+			Height:              100,
+			HorizontalAlignment: sahar.Left,
+			VerticalAlignment:   sahar.Top,
+
+			Children: []*sahar.Node{
+				{
+					Type: sahar.Stack,
+				},
+				{
+					Type: sahar.Stack,
+				},
+				{
+					Type: sahar.Stack,
+				},
+			},
+		}
+
+		expexted := &sahar.Node{
+			Type:                sahar.Stack,
+			Width:               100,
+			Height:              100,
+			HorizontalAlignment: sahar.Left,
+			VerticalAlignment:   sahar.Top,
+			Children: []*sahar.Node{
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+					X:      0,
+					Y:      0,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+					X:      0,
+					Y:      33.333333333333336,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+					X:      0,
+					Y:      66.66666666666667,
+				},
+			},
+		}
+
+		err := sahar.Resize(b)
+		assert.NoError(t, err)
+		err = sahar.Alignment(b)
+		assert.NoError(t, err)
+		assert.Equal(t, expexted, b)
+	})
+
+	t.Run("Test Alignment on a Stack with 3 children and TopCenter", func(t *testing.T) {
+		b := &sahar.Node{
+			Type:                sahar.Stack,
+			Width:               100,
+			Height:              100,
+			HorizontalAlignment: sahar.Center,
+			VerticalAlignment:   sahar.Top,
+
+			Children: []*sahar.Node{
+				{
+					Type: sahar.Stack,
+				},
+				{
+					Type: sahar.Stack,
+				},
+				{
+					Type: sahar.Stack,
+				},
+			},
+		}
+
+		expexted := &sahar.Node{
+			Type:                sahar.Stack,
+			Width:               100,
+			Height:              100,
+			HorizontalAlignment: sahar.Center,
+			VerticalAlignment:   sahar.Top,
+			Children: []*sahar.Node{
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+					X:      0,
+					Y:      0,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+					X:      0,
+					Y:      33.333333333333336,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+					X:      0,
+					Y:      66.66666666666667,
+				},
+			},
+		}
+
+		err := sahar.Resize(b)
+		assert.NoError(t, err)
+		err = sahar.Alignment(b)
+		assert.NoError(t, err)
+		assert.Equal(t, expexted, b)
+	})
+
+	t.Run("Test Alignment on a Stack with 3 children and TopRight", func(t *testing.T) {
+		b := &sahar.Node{
+			Type:                sahar.Stack,
+			Width:               100,
+			Height:              100,
+			HorizontalAlignment: sahar.Right,
+			VerticalAlignment:   sahar.Top,
+
+			Children: []*sahar.Node{
+				{
+					Type: sahar.Stack,
+				},
+				{
+					Type: sahar.Stack,
+				},
+				{
+					Type: sahar.Stack,
+				},
+			},
+		}
+
+		expexted := &sahar.Node{
+			Type:                sahar.Stack,
+			Width:               100,
+			Height:              100,
+			HorizontalAlignment: sahar.Right,
+			VerticalAlignment:   sahar.Top,
+			Children: []*sahar.Node{
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+					X:      0,
+					Y:      0,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+					X:      0,
+					Y:      33.333333333333336,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+					X:      0,
+					Y:      66.66666666666667,
+				},
+			},
+		}
+
+		err := sahar.Resize(b)
+		assert.NoError(t, err)
+		err = sahar.Alignment(b)
+		assert.NoError(t, err)
+		assert.Equal(t, expexted, b)
+	})
+
+	t.Run("Test Alignment on a Stack with 3 children width differnt width and TopCenter", func(t *testing.T) {
+		b := &sahar.Node{
+			Type:                sahar.Stack,
+			Width:               100,
+			Height:              100,
+			HorizontalAlignment: sahar.Center,
+			VerticalAlignment:   sahar.Top,
+
+			Children: []*sahar.Node{
+				{
+					Type:  sahar.Stack,
+					Width: 50,
+				},
+				{
+					Type:  sahar.Stack,
+					Width: 60,
+				},
+				{
+					Type: sahar.Stack,
+				},
+			},
+		}
+
+		expexted := &sahar.Node{
+			Type:                sahar.Stack,
+			Width:               100,
+			Height:              100,
+			HorizontalAlignment: sahar.Center,
+			VerticalAlignment:   sahar.Top,
+			Children: []*sahar.Node{
+				{
+					Type:   sahar.Stack,
+					Width:  50,
+					Height: 33.333333333333336,
+					X:      25,
+					Y:      0,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  60,
+					Height: 33.333333333333336,
+					X:      20,
+					Y:      33.333333333333336,
+				},
+				{
+					Type:   sahar.Stack,
+					Width:  100,
+					Height: 33.333333333333336,
+					X:      0,
+					Y:      66.66666666666667,
+				},
+			},
+		}
+
+		err := sahar.Resize(b)
+		assert.NoError(t, err)
+		err = sahar.Alignment(b)
+		assert.NoError(t, err)
+		assert.Equal(t, expexted, b)
+	})
 }

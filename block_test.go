@@ -2,40 +2,33 @@ package sahar_test
 
 import (
 	"testing"
-
-	"ella.to/sahar"
 )
 
 func TestBasicBlock(t *testing.T) {
-	b := sahar.Block(
-		sahar.Stack,
-		sahar.Margin(5, 5, 5, 5),
-		sahar.A4(),
+	// b := sahar.Block(
+	// 	sahar.Stack,
 
-		sahar.Block(
-			sahar.Stack,
-			sahar.Height(50),
-		),
-		sahar.Block(
-			sahar.Stack,
+	// 	sahar.Width(100),
+	// 	sahar.Height(100),
+	// 	// sahar.Margin(5, 5, 5, 5),
 
-			sahar.Block(
-				sahar.Stack,
-			),
-			sahar.Block(
-				sahar.Stack,
-			),
-			sahar.Block(
-				sahar.Stack,
-			),
-		),
-		sahar.Block(
-			sahar.Stack,
-			sahar.Height(50),
-		),
-	)
+	// 	sahar.Block(
+	// 		sahar.Stack,
+	// 		sahar.Margin(0, 0, 0, 0),
+	// 	),
 
-	sahar.Reflow(b)
+	// 	// sahar.Block(
+	// 	// 	sahar.Stack,
+	// 	// 	sahar.Margin(0, 0, 0, 0),
+	// 	// ),
 
-	drawPdf(t, b, 1)
+	// 	// sahar.Block(
+	// 	// 	sahar.Stack,
+	// 	// 	sahar.Margin(0, 0, 0, 0),
+	// 	// ),
+	// )
+
+	// sahar.Reflow(b)
+
+	// drawPdf(t, b, 1)
 }

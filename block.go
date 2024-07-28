@@ -39,6 +39,22 @@ type Node struct {
 	Children            []*Node
 }
 
+func (n *Node) isLastChild(node *Node) bool {
+	if len(n.Children) == 0 {
+		return false
+	}
+
+	return n.Children[len(n.Children)-1] == node
+}
+
+func (n *Node) isFirstChild(node *Node) bool {
+	if len(n.Children) == 0 {
+		return false
+	}
+
+	return n.Children[0] == node
+}
+
 func Block(typ Type, opts ...blockOpt) *Node {
 	block := &Node{
 		Type:                typ,
@@ -177,65 +193,63 @@ func TextValue(format string, args ...any) blockOpt {
 	})
 }
 
-func A1() blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Width = 1685
-		n.Height = 2384
-	})
+type blockSizeOpt interface {
+	configureNodeSize(*Node)
 }
 
-func A2() blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Width = 1190
-		n.Height = 1684
-	})
+type size struct {
+	w, h float64
 }
 
-func A3() blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Width = 842
-		n.Height = 1190
-	})
+var _ blockSizeOpt = (*size)(nil)
+var _ blockOpt = (*size)(nil)
+
+func (s *size) configureNodeSize(n *Node) {
+	n.Width = s.w
+	n.Height = s.h
 }
 
-func A4() blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Width = 595
-		n.Height = 842
-	})
+func (s *size) configureNode(n *Node) {
+	n.Width = s.w
+	n.Height = s.h
 }
 
-func A4Lanscape() blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Width = 842
-		n.Height = 595
-	})
+func Size(w, h float64) *size {
+	return &size{w, h}
 }
 
-func A4Smal() blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Width = 595
-		n.Height = 842
-	})
+func A1() *size {
+	return &size{1685, 2384}
 }
 
-func A5() blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Width = 420
-		n.Height = 595
-	})
+func A2() *size {
+	return &size{1190, 1684}
 }
 
-func B4() blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Width = 729
-		n.Height = 1032
-	})
+func A3() *size {
+	return &size{842, 1190}
 }
 
-func B5() blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Width = 516
-		n.Height = 729
-	})
+func A4() *size {
+	return &size{595, 842}
+}
+
+func A4Lanscape() *size {
+	return &size{842, 595}
+}
+
+func A4Smal() *size {
+	return &size{595, 842}
+}
+
+func A5() *size {
+	return &size{420, 595}
+}
+
+func B4() *size {
+	return &size{729, 1032}
+}
+
+func B5() *size {
+	return &size{516, 729}
 }
