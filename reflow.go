@@ -13,6 +13,9 @@ func Resize(node *Node) error {
 	noWidths := make([]*Node, 0)
 	noHeights := make([]*Node, 0)
 
+	node.Width -= node.Margin[1] + node.Margin[3]
+	node.Height -= node.Margin[0] + node.Margin[2]
+
 	remainingWidth := node.Width - node.Padding[1] - node.Padding[3]
 	remainingHeight := node.Height - node.Padding[0] - node.Padding[2]
 
