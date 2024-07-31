@@ -7,8 +7,8 @@ func Resize(node *Node) error {
 		return errors.New("parent node must have valid width and height")
 	}
 
-	isStack := node.Type == Stack
-	isGroup := node.Type == Group
+	isStack := node.IsStack()
+	isGroup := node.IsGroup()
 
 	noWidths := make([]*Node, 0)
 	noHeights := make([]*Node, 0)

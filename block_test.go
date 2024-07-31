@@ -8,9 +8,7 @@ import (
 
 func TestBasicBlock(t *testing.T) {
 
-	b := sahar.Block(
-		sahar.Stack,
-
+	b := sahar.Stack(
 		sahar.Padding(5, 5, 5, 5),
 
 		sahar.Width(100),
@@ -18,9 +16,7 @@ func TestBasicBlock(t *testing.T) {
 
 		sahar.Alignments(sahar.Center, sahar.Middle),
 
-		sahar.Block(
-			sahar.Stack,
-		),
+		sahar.Stack(),
 	)
 
 	sahar.Reflow(b)

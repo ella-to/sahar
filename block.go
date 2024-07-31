@@ -2,41 +2,47 @@ package sahar
 
 import "fmt"
 
-type HorizontalAlignment int
+type Horizontal int
 
 const (
-	Left HorizontalAlignment = iota
+	Left Horizontal = iota
 	Center
 	Right
 )
 
-type VerticalAlignment int
+type Vertical int
 
 const (
-	Top VerticalAlignment = iota
+	Top Vertical = iota
 	Middle
 	Bottom
 )
 
-type Type int
+type Order int
 
 const (
-	Stack Type = iota
-	Group
-	Image
-	Text
+	StackOrder Order = iota
+	GroupOrder
 )
 
 type Node struct {
-	X, Y                float64
-	Width, Height       float64
-	Margin              [4]float64
-	Padding             [4]float64
-	Type                Type
-	HorizontalAlignment HorizontalAlignment
-	VerticalAlignment   VerticalAlignment
-	Attributes          map[string]any
-	Children            []*Node
+	X, Y          float64
+	Width, Height float64
+	Margin        [4]float64
+	Padding       [4]float64
+	Order         Order
+	Horizontal    Horizontal
+	Vertical      Vertical
+	Attributes    map[string]any
+	Children      []*Node
+}
+
+func (n *Node) IsStack() bool {
+	return n.Order == StackOrder
+}
+
+func (n *Node) IsGroup() bool {
+	return n.Order == GroupOrder
 }
 
 // GetContainer returns the x, y, width, and height of the container of the node.
@@ -56,8 +62,8 @@ func (n *Node) GetContainer() (x, y, w, h float64) {
 func (n *Node) GetChildrenContainer() (x, y, w, h float64) {
 	cx, cy, cw, ch := n.GetContainer()
 
-	isStack := n.Type == Stack
-	isGroup := n.Type == Group
+	isStack := n.IsStack()
+	isGroup := n.IsGroup()
 
 	for _, child := range n.Children {
 		if isStack {
@@ -74,7 +80,7 @@ func (n *Node) GetChildrenContainer() (x, y, w, h float64) {
 	}
 
 	// align the position x and y
-	switch n.HorizontalAlignment {
+	switch n.Horizontal {
 	case Left:
 		x = cx
 	case Center:
@@ -83,7 +89,7 @@ func (n *Node) GetChildrenContainer() (x, y, w, h float64) {
 		x = cx + cw - w
 	}
 
-	switch n.VerticalAlignment {
+	switch n.Vertical {
 	case Top:
 		y = cy
 	case Middle:
@@ -97,8 +103,8 @@ func (n *Node) GetChildrenContainer() (x, y, w, h float64) {
 
 func (n *Node) AlignChildren() {
 	cx, cy, cw, ch := n.GetChildrenContainer()
-	isStack := n.Type == Stack
-	isGroup := n.Type == Group
+	isStack := n.IsStack()
+	isGroup := n.IsGroup()
 
 	x := cx
 	y := cy
@@ -108,7 +114,7 @@ func (n *Node) AlignChildren() {
 			child.X = x
 			x += child.Width
 
-			switch n.VerticalAlignment {
+			switch n.Vertical {
 			case Top:
 				child.Y = y
 			case Middle:
@@ -120,7 +126,7 @@ func (n *Node) AlignChildren() {
 			child.Y = y
 			y += child.Height
 
-			switch n.HorizontalAlignment {
+			switch n.Horizontal {
 			case Left:
 				child.X = x
 			case Center:
@@ -134,15 +140,23 @@ func (n *Node) AlignChildren() {
 	}
 }
 
-func Block(typ Type, opts ...blockOpt) *Node {
+func Stack(opts ...blockOpt) *Node {
+	return Block(StackOrder, opts...)
+}
+
+func Group(opts ...blockOpt) *Node {
+	return Block(GroupOrder, opts...)
+}
+
+func Block(order Order, opts ...blockOpt) *Node {
 	block := &Node{
-		Type:                typ,
-		Margin:              [4]float64{0, 0, 0, 0},
-		Padding:             [4]float64{0, 0, 0, 0},
-		HorizontalAlignment: Left,
-		VerticalAlignment:   Top,
-		Attributes:          make(map[string]any),
-		Children:            make([]*Node, 0),
+		Order:      order,
+		Margin:     [4]float64{0, 0, 0, 0},
+		Padding:    [4]float64{0, 0, 0, 0},
+		Horizontal: Left,
+		Vertical:   Top,
+		Attributes: make(map[string]any),
+		Children:   make([]*Node, 0),
 	}
 
 	for _, opt := range opts {
@@ -184,22 +198,10 @@ func Padding(top, right, bottom, left float64) blockOpt {
 	})
 }
 
-func Horizontal(h HorizontalAlignment) blockOpt {
+func Alignments(horizontal Horizontal, vertical Vertical) blockOpt {
 	return blockOptFunc(func(n *Node) {
-		n.HorizontalAlignment = h
-	})
-}
-
-func Vertical(v VerticalAlignment) blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.VerticalAlignment = v
-	})
-}
-
-func Alignments(horizontal HorizontalAlignment, vertical VerticalAlignment) blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.HorizontalAlignment = horizontal
-		n.VerticalAlignment = vertical
+		n.Horizontal = horizontal
+		n.Vertical = vertical
 	})
 }
 

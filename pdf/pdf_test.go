@@ -17,7 +17,7 @@ func TestPdf(t *testing.T) {
 		defer file.Close()
 
 		node := &sahar.Node{
-			Type:   sahar.Stack,
+			Order:  sahar.StackOrder,
 			Width:  100,
 			Height: 100,
 			Margin: [4]float64{5, 5, 5, 5},
@@ -27,21 +27,21 @@ func TestPdf(t *testing.T) {
 				{
 					Width:  90,
 					Height: 30,
-					Type:   sahar.Stack,
+					Order:  sahar.StackOrder,
 					X:      5,
 					Y:      5,
 				},
 				{
 					Width:  90,
 					Height: 30,
-					Type:   sahar.Stack,
+					Order:  sahar.StackOrder,
 					X:      5,
 					Y:      35,
 				},
 				{
 					Width:  90,
 					Height: 30,
-					Type:   sahar.Stack,
+					Order:  sahar.StackOrder,
 					X:      5,
 					Y:      65,
 				},
