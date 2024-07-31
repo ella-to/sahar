@@ -188,9 +188,7 @@ func TestAlignment(t *testing.T) {
 			Height: 100,
 		}
 
-		err := sahar.Resize(b)
-		assert.NoError(t, err)
-		err = sahar.Alignment(b)
+		err := sahar.Reflow(b)
 		assert.NoError(t, err)
 		assert.Equal(t, expexted, b)
 	})
@@ -208,9 +206,7 @@ func TestAlignment(t *testing.T) {
 			Height: 100,
 		}
 
-		err := sahar.Resize(b)
-		assert.NoError(t, err)
-		err = sahar.Alignment(b)
+		err := sahar.Reflow(b)
 		assert.NoError(t, err)
 		assert.Equal(t, expexted, b)
 	})
@@ -267,9 +263,7 @@ func TestAlignment(t *testing.T) {
 			},
 		}
 
-		err := sahar.Resize(b)
-		assert.NoError(t, err)
-		err = sahar.Alignment(b)
+		err := sahar.Reflow(b)
 		assert.NoError(t, err)
 		assert.Equal(t, expexted, b)
 	})
@@ -326,9 +320,7 @@ func TestAlignment(t *testing.T) {
 			},
 		}
 
-		err := sahar.Resize(b)
-		assert.NoError(t, err)
-		err = sahar.Alignment(b)
+		err := sahar.Reflow(b)
 		assert.NoError(t, err)
 		assert.Equal(t, expexted, b)
 	})
@@ -385,9 +377,7 @@ func TestAlignment(t *testing.T) {
 			},
 		}
 
-		err := sahar.Resize(b)
-		assert.NoError(t, err)
-		err = sahar.Alignment(b)
+		err := sahar.Reflow(b)
 		assert.NoError(t, err)
 		assert.Equal(t, expexted, b)
 	})
@@ -446,9 +436,7 @@ func TestAlignment(t *testing.T) {
 			},
 		}
 
-		err := sahar.Resize(b)
-		assert.NoError(t, err)
-		err = sahar.Alignment(b)
+		err := sahar.Reflow(b)
 		assert.NoError(t, err)
 		assert.Equal(t, expexted, b)
 	})

@@ -39,20 +39,99 @@ type Node struct {
 	Children            []*Node
 }
 
-func (n *Node) isLastChild(node *Node) bool {
-	if len(n.Children) == 0 {
-		return false
-	}
+// GetContainer returns the x, y, width, and height of the container of the node.
+// The container is the area where the children of the node are placed.
+func (n *Node) GetContainer() (x, y, w, h float64) {
+	x = n.X + n.Padding[3]
+	y = n.Y + n.Padding[0]
 
-	return n.Children[len(n.Children)-1] == node
+	w = n.Width - n.Padding[1] - n.Padding[3]
+	h = n.Height - n.Padding[0] - n.Padding[2]
+
+	return
 }
 
-func (n *Node) isFirstChild(node *Node) bool {
-	if len(n.Children) == 0 {
-		return false
+// GetChildrenContainer used to calculate the max width and height of the
+// all children for current node. It uses x and y coordinate of the parent
+func (n *Node) GetChildrenContainer() (x, y, w, h float64) {
+	cx, cy, cw, ch := n.GetContainer()
+
+	isStack := n.Type == Stack
+	isGroup := n.Type == Group
+
+	for _, child := range n.Children {
+		if isStack {
+			h += child.Height
+		} else {
+			w += child.Width
+		}
 	}
 
-	return n.Children[0] == node
+	if isStack {
+		w = cw
+	} else if isGroup {
+		h = ch
+	}
+
+	// align the position x and y
+	switch n.HorizontalAlignment {
+	case Left:
+		x = cx
+	case Center:
+		x = cx + (cw-w)/2
+	case Right:
+		x = cx + cw - w
+	}
+
+	switch n.VerticalAlignment {
+	case Top:
+		y = cy
+	case Middle:
+		y = cy + (ch-h)/2
+	case Bottom:
+		y = cy + ch - h
+	}
+
+	return
+}
+
+func (n *Node) AlignChildren() {
+	cx, cy, cw, ch := n.GetChildrenContainer()
+	isStack := n.Type == Stack
+	isGroup := n.Type == Group
+
+	x := cx
+	y := cy
+
+	for _, child := range n.Children {
+		if isGroup {
+			child.X = x
+			x += child.Width
+
+			switch n.VerticalAlignment {
+			case Top:
+				child.Y = y
+			case Middle:
+				child.Y = y + (ch-child.Height)/2
+			case Bottom:
+				child.Y = y + ch - child.Height
+			}
+		} else if isStack {
+			child.Y = y
+			y += child.Height
+
+			switch n.HorizontalAlignment {
+			case Left:
+				child.X = x
+			case Center:
+				child.X = x + (cw-child.Width)/2
+			case Right:
+				child.X = x + cw - child.Width
+			}
+		}
+
+		child.AlignChildren()
+	}
 }
 
 func Block(typ Type, opts ...blockOpt) *Node {
