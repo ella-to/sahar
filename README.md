@@ -1,49 +1,35 @@
+# Sahar
+
+a layout engine for text and images using basic primitives.
+
+## Installation
+
+```
+go get ella.to/sahar
+```
+
+## Usage
+
 ```golang
+	b := sahar.Stack(
+		sahar.Padding(5, 5, 5, 5),
 
-sahar.Block(
-    sahar.Stack,
-    sahar.A4(), // set the width and height of the block
+		sahar.FontFamily("Arial", "./testdata/Arial.ttf"),
 
-    sahar.Block(
-        sahar.Group,
-        sahar.Height(100),
-        sahar.Block(
-            sahar.Stack,
-            sahar.Width(100),
-        ),
-        sahar.Block(
-            sahar.Stack,
-            sahar.Alignments(sahar.Left, sahar.Top),
-            sahar.Block(sahar.Stack),
-        ),
-    ),
+		sahar.Width(200),
+		sahar.Height(200),
 
-    sahar.Block(
-        sahar.Stack,
-        sahar.Block(
-            sahar.Stack,
-            sahar.Height(100),
-            sahar.Background("red"),
-        ),
-        sahar.Block(sahar.Stack),
-        sahar.Block(
-            sahar.Group,
-            sahar.Height(10),
-            sahar.Block(
-                sahar.Stack,
-                sahar.FontSize(14),
-                sahar.Text(
-                    "Contant me at",
-                ),
-            ),
-            sahar.Block(
-                sahar.Stack,
-                sahar.FontSize(14),
-                sahar.Text("sahar[at]ella.to"),
-                sahar.Attr("href", "mailto:sahar@ella.to"),
-            ),
-        ),
-    ),
-)
+		sahar.Stack(
+			sahar.Alignments(sahar.Center, sahar.Middle),
+			sahar.BackgroundColor("#FF0000"),
 
+			sahar.Text(
+				"Hello, World!",
+				sahar.Color("#000000"),
+				sahar.FontSize(8),
+			),
+
+			sahar.Image("./testdata/Sample.jpeg"),
+		),
+	)
 ```
