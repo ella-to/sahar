@@ -1,7 +1,9 @@
 package pdf
 
 import (
+	"fmt"
 	"io"
+	"strconv"
 
 	"math/rand"
 
@@ -52,10 +54,20 @@ func Write(w io.Writer, node *sahar.Node) error {
 }
 
 func write(pdf *gopdf.GoPdf, node *sahar.Node) {
+	//pdf.SetFillColor(generateRandomColor()) //setup fill color
+
 	if sahar.IsType(node, sahar.TextType) {
 		fontName := node.Attributes["font-family"].(string)
 		fontSize := node.Attributes["font-size"].(float64)
 		text := node.Attributes["text"].(string)
+		color := getColor(node)
+
+		if color != "" {
+			r, g, b, err := hexToRGB(color)
+			if err == nil {
+				pdf.SetFillColor(r, g, b)
+			}
+		}
 
 		pdf.SetFont(fontName, "", fontSize)
 		pdf.SetXY(node.X, node.Y)
@@ -70,19 +82,61 @@ func write(pdf *gopdf.GoPdf, node *sahar.Node) {
 		return
 	}
 
-	drawRect(pdf, node.X, node.Y, node.Width, node.Height)
+	background := getBackgroundColor(node)
+
+	drawRect(pdf, node.X, node.Y, node.Width, node.Height, background)
 
 	for _, child := range node.Children {
 		write(pdf, child)
 	}
 }
 
-func drawRect(pdf *gopdf.GoPdf, x, y, width, height float64) {
+func drawRect(pdf *gopdf.GoPdf, x, y, width, height float64, backgroundColor string) {
 	pdf.SetLineWidth(0.0)
 
-	// randomize color
-	pdf.SetFillColor(generateRandomColor()) //setup fill color
-	pdf.RectFromUpperLeftWithStyle(x, y, width, height, "FD")
+	if backgroundColor != "" {
+		r, g, b, err := hexToRGB(backgroundColor)
+		if err == nil {
+			pdf.SetFillColor(r, g, b)
+		}
+	}
+
+	pdf.RectFromUpperLeftWithStyle(x, y, width, height, "F")
+}
+
+func getColor(node *sahar.Node) string {
+	if val, ok := node.Attributes["color"]; ok {
+		return val.(string)
+	}
+	return ""
+}
+
+func getBackgroundColor(node *sahar.Node) string {
+	if val, ok := node.Attributes["background-color"]; ok {
+		return val.(string)
+	}
+	return ""
+}
+
+func hexToRGB(hex string) (uint8, uint8, uint8, error) {
+	if len(hex) != 7 || hex[0] != '#' {
+		return 0, 0, 0, fmt.Errorf("invalid hex color format")
+	}
+
+	r, err := strconv.ParseUint(hex[1:3], 16, 8)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	g, err := strconv.ParseUint(hex[3:5], 16, 8)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	b, err := strconv.ParseUint(hex[5:7], 16, 8)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	return uint8(r), uint8(g), uint8(b), nil
 }
 
 func generateRandomColor() (uint8, uint8, uint8) {

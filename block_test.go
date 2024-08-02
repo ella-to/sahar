@@ -17,14 +17,18 @@ func TestBasicBlock(t *testing.T) {
 		sahar.Width(200),
 		sahar.Height(200),
 
-		sahar.Alignments(sahar.Center, sahar.Middle),
+		sahar.Stack(
+			sahar.Alignments(sahar.Center, sahar.Middle),
+			sahar.BackgroundColor("#FF0000"),
 
-		sahar.Text(
-			"Hello, World!",
-			sahar.FontSize(8),
+			sahar.Text(
+				"Hello, World!",
+				sahar.Color("#000000"),
+				sahar.FontSize(8),
+			),
+
+			sahar.Image("./testdata/Sample.jpeg"),
 		),
-
-		sahar.Image("./testdata/Sample.jpeg"),
 	)
 
 	err := sahar.Reflow(b)
