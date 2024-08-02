@@ -293,6 +293,13 @@ func Image(src string) *Node {
 	)
 }
 
+func Border(width float64, color string) blockOpt {
+	return blockOptFunc(func(n *Node) {
+		n.Attributes["border-width"] = width
+		n.Attributes["border-color"] = color
+	})
+}
+
 func Text(text string, opts ...blockOpt) *Node {
 	opts = append(opts, setType(TextType), Attr("text", text))
 	return Block(StackOrder, opts...)

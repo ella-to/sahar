@@ -13,13 +13,14 @@ func TestBasicBlock(t *testing.T) {
 		sahar.Padding(5, 5, 5, 5),
 
 		sahar.FontFamily("Arial", "./testdata/Arial.ttf"),
+		sahar.BackgroundColor("#FFFFFF"),
+		sahar.Border(0, "#FFFFFF"),
 
 		sahar.Width(200),
 		sahar.Height(200),
 
 		sahar.Stack(
 			sahar.Alignments(sahar.Center, sahar.Middle),
-			sahar.BackgroundColor("#FF0000"),
 
 			sahar.Text(
 				"Hello, World!",

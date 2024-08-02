@@ -82,18 +82,20 @@ func write(pdf *gopdf.GoPdf, node *sahar.Node) {
 		return
 	}
 
-	background := getBackgroundColor(node)
-
-	drawRect(pdf, node.X, node.Y, node.Width, node.Height, background)
-
-	for _, child := range node.Children {
-		write(pdf, child)
+	borderWidth, borderColor := getBorder(node)
+	if borderWidth > 0 {
+		pdf.SetLineWidth(borderWidth)
 	}
-}
 
-func drawRect(pdf *gopdf.GoPdf, x, y, width, height float64, backgroundColor string) {
 	pdf.SetLineWidth(0.0)
+	if borderColor != "" {
+		r, g, b, err := hexToRGB(borderColor)
+		if err == nil {
+			pdf.SetStrokeColor(r, g, b)
+		}
+	}
 
+	backgroundColor := getBackgroundColor(node)
 	if backgroundColor != "" {
 		r, g, b, err := hexToRGB(backgroundColor)
 		if err == nil {
@@ -101,7 +103,11 @@ func drawRect(pdf *gopdf.GoPdf, x, y, width, height float64, backgroundColor str
 		}
 	}
 
-	pdf.RectFromUpperLeftWithStyle(x, y, width, height, "F")
+	pdf.RectFromUpperLeftWithStyle(node.X, node.Y, node.Width, node.Height, "FD")
+
+	for _, child := range node.Children {
+		write(pdf, child)
+	}
 }
 
 func getColor(node *sahar.Node) string {
@@ -116,6 +122,20 @@ func getBackgroundColor(node *sahar.Node) string {
 		return val.(string)
 	}
 	return ""
+}
+
+func getBorder(node *sahar.Node) (float64, string) {
+	width, ok := node.Attributes["border-width"]
+	if !ok {
+		return 0, ""
+	}
+
+	color, ok := node.Attributes["border-color"]
+	if !ok {
+		return 0, ""
+	}
+
+	return width.(float64), color.(string)
 }
 
 func hexToRGB(hex string) (uint8, uint8, uint8, error) {

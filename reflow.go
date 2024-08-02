@@ -117,6 +117,10 @@ func Reflow(node *Node) error {
 		"font-family",
 		"font-size",
 		"font-family-src",
+		"background-color",
+		"color",
+		"border-width",
+		"border-color",
 	)
 
 	err := Resize(node)
