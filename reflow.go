@@ -1,6 +1,9 @@
 package sahar
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 func Resize(node *Node) error {
 	if node.Width <= 0 || node.Height <= 0 {
@@ -12,9 +15,6 @@ func Resize(node *Node) error {
 
 	noWidths := make([]*Node, 0)
 	noHeights := make([]*Node, 0)
-
-	node.Width -= node.Margin[1] + node.Margin[3]
-	node.Height -= node.Margin[0] + node.Margin[2]
 
 	remainingWidth := node.Width - node.Padding[1] - node.Padding[3]
 	remainingHeight := node.Height - node.Padding[0] - node.Padding[2]
@@ -63,15 +63,68 @@ func Resize(node *Node) error {
 		}
 	}
 
+	if IsType(node, TextType) {
+		// Since we have the width and height,
+		// we can process the Text node here
+		text, ok := node.Attributes["text"]
+		if !ok {
+			return nil
+		}
+
+		fontFamily, ok := node.Attributes["font-family-src"]
+		if !ok {
+			return fmt.Errorf("font-family is required for text node")
+		}
+
+		fontSize, ok := node.Attributes["font-size"]
+		if !ok {
+			return fmt.Errorf("font-size is required for text node")
+		}
+
+		ff, err := loadFont(fontFamily.(string), fontSize.(float64))
+		if err != nil {
+			return err
+		}
+
+		width, height := measureString(text.(string), ff)
+		node.Width = float64(width)
+		node.Height = float64(height)
+	}
+
 	return nil
 }
 
+func copyParentsAttrsToChildren(node *Node, keys ...string) {
+	for _, child := range node.Children {
+		for _, key := range keys {
+			val, ok := node.Attributes[key]
+			if !ok {
+				continue
+			}
+
+			if _, ok := child.Attributes[key]; !ok {
+				child.Attributes[key] = val
+			}
+		}
+
+		copyParentsAttrsToChildren(child, keys...)
+	}
+}
+
 func Reflow(node *Node) error {
+	copyParentsAttrsToChildren(
+		node,
+		"font-family",
+		"font-size",
+		"font-family-src",
+	)
+
 	err := Resize(node)
 	if err != nil {
 		return err
 	}
 
 	node.AlignChildren()
+
 	return nil
 }

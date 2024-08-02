@@ -20,7 +20,6 @@ func TestPdf(t *testing.T) {
 			Order:  sahar.StackOrder,
 			Width:  100,
 			Height: 100,
-			Margin: [4]float64{5, 5, 5, 5},
 			X:      5,
 			Y:      5,
 			Children: []*sahar.Node{

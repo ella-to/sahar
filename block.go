@@ -1,7 +1,5 @@
 package sahar
 
-import "fmt"
-
 type Horizontal int
 
 const (
@@ -25,10 +23,17 @@ const (
 	GroupOrder
 )
 
+type Type int
+
+const (
+	_ Type = iota
+	ImageType
+	TextType
+)
+
 type Node struct {
 	X, Y          float64
 	Width, Height float64
-	Margin        [4]float64
 	Padding       [4]float64
 	Order         Order
 	Horizontal    Horizontal
@@ -151,7 +156,6 @@ func Group(opts ...blockOpt) *Node {
 func Block(order Order, opts ...blockOpt) *Node {
 	block := &Node{
 		Order:      order,
-		Margin:     [4]float64{0, 0, 0, 0},
 		Padding:    [4]float64{0, 0, 0, 0},
 		Horizontal: Left,
 		Vertical:   Top,
@@ -186,12 +190,6 @@ func (f blockOptFunc) configureNode(n *Node) {
 	f(n)
 }
 
-func Margin(top, right, bottom, left float64) blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Margin = [4]float64{top, right, bottom, left}
-	})
-}
-
 func Padding(top, right, bottom, left float64) blockOpt {
 	return blockOptFunc(func(n *Node) {
 		n.Padding = [4]float64{top, right, bottom, left}
@@ -208,6 +206,14 @@ func Alignments(horizontal Horizontal, vertical Vertical) blockOpt {
 func Attr(key string, value any) blockOpt {
 	return blockOptFunc(func(n *Node) {
 		n.Attributes[key] = value
+	})
+}
+
+func ApplyMulti(attrs ...blockOpt) blockOpt {
+	return blockOptFunc(func(n *Node) {
+		for _, attr := range attrs {
+			attr.configureNode(n)
+		}
 	})
 }
 
@@ -242,19 +248,36 @@ func XY(x, y float64) blockOpt {
 	})
 }
 
+func IsType(node *Node, typ Type) bool {
+	if val, ok := node.Attributes["type"]; ok {
+		if valType, ok := val.(Type); ok {
+			return valType == typ
+		}
+	}
+
+	return false
+}
+
+func setType(typ Type) blockOpt {
+	return Attr("type", typ)
+}
+
 func FontSize(size float64) blockOpt {
 	return Attr("font-size", size)
 }
 
-func FontFamily(family string) blockOpt {
-	return Attr("font-family", family)
+func FontFamily(name string, src string) blockOpt {
+	return ApplyMulti(
+		Attr("font-family", name),
+		Attr("font-family-src", src),
+	)
 }
 
 func FontWeight(weight string) blockOpt {
 	return Attr("font-weight", weight)
 }
 
-func TextColor(color string) blockOpt {
+func Color(color string) blockOpt {
 	return Attr("color", color)
 }
 
@@ -262,16 +285,17 @@ func BackgroundColor(color string) blockOpt {
 	return Attr("background-color", color)
 }
 
-func Src(src string) blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Attributes["src"] = src
-	})
+func Image(src string) *Node {
+	return Block(
+		StackOrder,
+		setType(ImageType),
+		Attr("img-src", src),
+	)
 }
 
-func TextValue(format string, args ...any) blockOpt {
-	return blockOptFunc(func(n *Node) {
-		n.Attributes["value"] = fmt.Sprintf(format, args...)
-	})
+func Text(text string, opts ...blockOpt) *Node {
+	opts = append(opts, setType(TextType), Attr("text", text))
+	return Block(StackOrder, opts...)
 }
 
 type blockSizeOpt interface {

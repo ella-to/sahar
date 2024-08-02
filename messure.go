@@ -1,13 +1,26 @@
 package sahar
 
 import (
+	"fmt"
 	"os"
+	"sync"
 
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 )
 
+var cacheFontFaceLock sync.Mutex
+var cacheFontFace = make(map[string]font.Face)
+
 func loadFont(filename string, size float64) (font.Face, error) {
+	cacheFontFaceLock.Lock()
+	defer cacheFontFaceLock.Unlock()
+
+	key := fmt.Sprintf("%s-%f", filename, size)
+	if fnt, ok := cacheFontFace[key]; ok {
+		return fnt, nil
+	}
+
 	// Read the font file
 	fontBytes, err := os.ReadFile(filename)
 	if err != nil {
@@ -29,6 +42,8 @@ func loadFont(filename string, size float64) (font.Face, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	cacheFontFace[key] = fontFace
 
 	return fontFace, nil
 }
