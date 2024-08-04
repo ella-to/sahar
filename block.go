@@ -176,6 +176,14 @@ func (n *Node) configureNode(node *Node) {
 	node.Children = append(node.Children, n)
 }
 
+type Nodes []*Node
+
+var _ blockOpt = (*Nodes)(nil)
+
+func (ns Nodes) configureNode(node *Node) {
+	node.Children = append(node.Children, ns...)
+}
+
 //
 // Block options
 //
