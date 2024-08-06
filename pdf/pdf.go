@@ -25,28 +25,32 @@ func getFonts(node *sahar.Node, result map[string]string) {
 	}
 }
 
-func Write(w io.Writer, node *sahar.Node) error {
+func Write(w io.Writer, nodes ...*sahar.Node) error {
 	pdf := gopdf.GoPdf{}
 
-	pageSize := *gopdf.PageSizeA4
-	pageSize.H = float64(node.Height)
-	pageSize.W = float64(node.Width)
+	for i, node := range nodes {
+		if i == 0 {
+			pageSize := *gopdf.PageSizeA4
+			pageSize.H = float64(node.Height)
+			pageSize.W = float64(node.Width)
 
-	pdf.Start(gopdf.Config{PageSize: pageSize})
-	pdf.AddPage()
-
-	fontsMap := make(map[string]string)
-	getFonts(node, fontsMap)
-
-	for name, src := range fontsMap {
-		err := pdf.AddTTFFont(name, src)
-		if err != nil {
-			return err
+			pdf.Start(gopdf.Config{PageSize: pageSize})
 		}
-	}
+		pdf.AddPage()
 
-	for _, child := range node.Children {
-		write(&pdf, child)
+		fontsMap := make(map[string]string)
+		getFonts(node, fontsMap)
+
+		for name, src := range fontsMap {
+			err := pdf.AddTTFFont(name, src)
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, child := range node.Children {
+			write(&pdf, child)
+		}
 	}
 
 	_, err := pdf.WriteTo(w)

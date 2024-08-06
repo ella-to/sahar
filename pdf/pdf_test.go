@@ -16,7 +16,7 @@ func TestPdf(t *testing.T) {
 		}
 		defer file.Close()
 
-		node := &sahar.Node{
+		p1 := &sahar.Node{
 			Order:  sahar.StackOrder,
 			Width:  100,
 			Height: 100,
@@ -47,7 +47,38 @@ func TestPdf(t *testing.T) {
 			},
 		}
 
-		err = pdf.Write(file, node)
+		p2 := &sahar.Node{
+			Order:  sahar.StackOrder,
+			Width:  100,
+			Height: 100,
+			X:      5,
+			Y:      5,
+			Children: []*sahar.Node{
+				{
+					Width:  90,
+					Height: 30,
+					Order:  sahar.StackOrder,
+					X:      5,
+					Y:      5,
+				},
+				{
+					Width:  90,
+					Height: 30,
+					Order:  sahar.StackOrder,
+					X:      5,
+					Y:      35,
+				},
+				{
+					Width:  90,
+					Height: 30,
+					Order:  sahar.StackOrder,
+					X:      5,
+					Y:      65,
+				},
+			},
+		}
+
+		err = pdf.Write(file, p1, p2)
 		if err != nil {
 			t.Fatal(err)
 		}
