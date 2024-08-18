@@ -89,9 +89,10 @@ func write(pdf *gopdf.GoPdf, node *sahar.Node) {
 	borderWidth, borderColor := getBorder(node)
 	if borderWidth > 0 {
 		pdf.SetLineWidth(borderWidth)
+	} else {
+		pdf.SetLineWidth(0.0)
 	}
 
-	pdf.SetLineWidth(0.0)
 	if borderColor != "" {
 		r, g, b, err := hexToRGB(borderColor)
 		if err == nil {
