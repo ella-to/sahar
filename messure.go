@@ -37,7 +37,7 @@ func loadFont(filename string, size float64) (font.Face, error) {
 	fontFace, err := opentype.NewFace(parsedFont, &opentype.FaceOptions{
 		Size:    size,
 		DPI:     72,
-		Hinting: font.HintingFull,
+		Hinting: font.HintingNone,
 	})
 	if err != nil {
 		return nil, err
@@ -54,9 +54,14 @@ func measureString(s string, fnt font.Face) (int, int) {
 		Src:  nil, // Source image, not needed for measurement
 		Face: fnt,
 	}
-	// Calculate the width
-	width := d.MeasureString(s).Ceil()
-	// Calculate the height
-	height := (fnt.Metrics().Ascent + fnt.Metrics().Descent).Ceil()
-	return width, height
+
+	// Measure the width.
+	advance := d.MeasureString(s)
+
+	// Get the height from the font metrics.
+	metrics := fnt.Metrics()
+	height := metrics.Ascent + metrics.Descent
+
+	width := advance.Round() // Convert fixed.Point26_6 to int
+	return width, height.Round()
 }
