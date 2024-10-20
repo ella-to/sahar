@@ -30,9 +30,11 @@ func Write(w io.Writer, nodes ...*sahar.Node) error {
 
 	for i, node := range nodes {
 		if i == 0 {
-			pageSize := *gopdf.PageSizeA4
+			pageSize := gopdf.Rect{}
 			pageSize.H = float64(node.Height)
 			pageSize.W = float64(node.Width)
+
+			pageSize.UnitsToPoints(gopdf.UnitPX)
 
 			pdf.Start(gopdf.Config{PageSize: pageSize})
 		}
