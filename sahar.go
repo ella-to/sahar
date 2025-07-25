@@ -63,16 +63,21 @@ type Size struct {
 }
 
 type Node struct {
-	Direction     direction
-	Type          Type
-	Position      Position
-	ChildGap      float64 // Space between children
-	Width, Height Size
-	Padding       [4]float64 // Top, Right, Bottom, Left
-	Horizontal    Horizontal
-	Vertical      Vertical
-	Parent        *Node
-	Children      []*Node
+	Direction      direction
+	Type           Type
+	Value          string  // For Text nodes
+	FontSize       float64 // For Text nodes
+	FontType       string  // For Text nodes
+	FontLineHeight float64 // For Text nodes
+	Position       Position
+	ChildGap       float64 // Space between children
+	Width, Height  Size
+	Padding        [4]float64 // Top, Right, Bottom, Left
+	Horizontal     Horizontal
+	Vertical       Vertical
+	Parent         *Node
+	Children       []*Node
+	Border         float64 // Border width for Box nodes
 }
 
 var _ nodeOpt = (*Node)(nil)
@@ -85,6 +90,52 @@ func (n *Node) configureNode(node *Node) {
 //
 // Utitlities
 //
+
+type border float64
+
+var (
+	_ nodeOpt = border(0)
+	_ textOpt = border(0)
+)
+
+func (b border) configureNode(n *Node) {
+	n.Border = float64(b)
+}
+
+func (b border) configureText(n *Node) {
+	n.Border = float64(b)
+}
+
+func Border(width float64) border {
+	return border(width)
+}
+
+func Text(value string, opts ...textOpt) *Node {
+	n := &Node{
+		Type:      TextType,
+		Direction: LeftToRight,
+		Value:     value,
+		Width: Size{
+			Type:  FitType,
+			Value: 0,
+			Max:   MaxNotSet,
+			Min:   MinNotSet,
+		},
+		Height: Size{
+			Type:  FitType,
+			Value: 0,
+			Max:   MaxNotSet,
+			Min:   MinNotSet,
+		},
+	}
+	for _, opt := range opts {
+		opt.configureText(n)
+	}
+
+	n.FontLineHeight = n.FontSize / 2
+
+	return n
+}
 
 func Box(opts ...nodeOpt) *Node {
 	n := &Node{
@@ -109,6 +160,18 @@ func Box(opts ...nodeOpt) *Node {
 	}
 
 	return n
+}
+
+func FontSize(size float64) textOpt {
+	return textOptFunc(func(n *Node) {
+		n.FontSize = size
+	})
+}
+
+func FontType(fontType string) textOpt {
+	return textOptFunc(func(n *Node) {
+		n.FontType = fontType
+	})
 }
 
 func ChildGap(gap float64) nodeOpt {
@@ -170,6 +233,23 @@ func Grow() sizingOpt {
 		s.Type = GrowType
 		s.Value = 0 // Grow does not have a specific value, it just fills available space
 	})
+}
+
+func A4() []sizingOpt {
+	return []sizingOpt{
+		sizingOptFunc(func(s *Size) {
+			s.Type = FixedType
+			s.Value = 595.28 // A4 width in points
+			s.Max = 841.89   // A4 height in points
+			s.Min = 0        // No minimum size
+		}),
+		sizingOptFunc(func(s *Size) {
+			s.Type = FixedType
+			s.Value = 841.89 // A4 height in points
+			s.Max = 595.28   // A4 width in points
+			s.Min = 0        // No minimum size
+		}),
+	}
 }
 
 func Sizing(opts ...sizingOpt) nodeOpt {
@@ -243,6 +323,16 @@ type sizingOptFunc func(*Size)
 
 func (f sizingOptFunc) configureSizing(s *Size) {
 	f(s)
+}
+
+type textOpt interface {
+	configureText(*Node)
+}
+
+type textOptFunc func(*Node)
+
+func (f textOptFunc) configureText(n *Node) {
+	f(n)
 }
 
 //

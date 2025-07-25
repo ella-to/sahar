@@ -1,6 +1,15 @@
 package sahar
 
-import "math"
+import (
+	"math"
+	"strings"
+
+	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/font"
+)
+
+// FontCache stores loaded fonts to avoid reloading
+var FontCache = make(map[string]*truetype.Font)
 
 // Layout performs multi-pass layout calculation on the node tree
 func Layout(root *Node) *Node {
@@ -13,15 +22,17 @@ func Layout(root *Node) *Node {
 
 	// Pass 2: Grow & Shrink Widths (Min and Max)
 	calculateGrowWidths(root)
+	shrinkWidths(root)
 
-	// Pass 3: Wrap Text (placeholder for now)
-	// TODO: Implement text wrapping logic when text nodes are added
+	// Pass 3: Wrap Text
+	wrapText(root)
 
 	// Pass 4: Fit Sizing Heights (Min and Max)
 	calculateFitHeights(root)
 
 	// Pass 5: Grow & Shrink Heights (Min and Max)
 	calculateGrowHeights(root)
+	shrinkHeights(root)
 
 	// Pass 6: Positions & Alignments
 	calculatePositions(root)
@@ -41,8 +52,12 @@ func calculateFitWidths(node *Node) {
 		var contentWidth float64
 
 		if len(node.Children) == 0 {
-			// Leaf node - content width is 0 for boxes (would be text width for text nodes)
-			contentWidth = 0
+			// Leaf node - content width depends on type
+			if node.Type == TextType {
+				contentWidth = measureTextWidth(node.Value, node.FontSize, node.FontType)
+			} else {
+				contentWidth = 0
+			}
 		} else if node.Direction == LeftToRight {
 			// Horizontal layout: sum children widths + gaps
 			for i, child := range node.Children {
@@ -130,6 +145,62 @@ func calculateGrowWidths(node *Node) {
 	}
 }
 
+// Shrink widths when content exceeds available space
+func shrinkWidths(node *Node) {
+	if len(node.Children) == 0 {
+		return
+	}
+
+	var availableWidth float64
+	if node.Width.Type == FixedType || node.Width.Type == FitType {
+		availableWidth = node.Width.Value - node.Padding[1] - node.Padding[3]
+	}
+
+	if node.Direction == LeftToRight {
+		// Calculate total required width
+		var totalRequiredWidth float64
+		for i, child := range node.Children {
+			totalRequiredWidth += getActualWidth(child)
+			if i < len(node.Children)-1 {
+				totalRequiredWidth += node.ChildGap
+			}
+		}
+
+		// If content exceeds available space, shrink proportionally
+		if totalRequiredWidth > availableWidth && availableWidth > 0 {
+			shrinkRatio := availableWidth / totalRequiredWidth
+			for _, child := range node.Children {
+				newWidth := getActualWidth(child) * shrinkRatio
+				// Respect minimum constraints
+				if child.Width.Min != MinNotSet && newWidth < child.Width.Min {
+					newWidth = child.Width.Min
+				}
+				child.Width.Value = newWidth
+			}
+		}
+	}
+
+	// Recursively process children
+	for _, child := range node.Children {
+		shrinkWidths(child)
+	}
+}
+
+// Pass 3: Wrap text based on available width
+func wrapText(node *Node) {
+	if node.Type == TextType && node.Value != "" {
+		availableWidth := node.Width.Value - node.Padding[1] - node.Padding[3]
+		if availableWidth > 0 {
+			node.Value = wrapTextToWidth(node.Value, availableWidth, node.FontSize, node.FontType)
+		}
+	}
+
+	// Recursively process children
+	for _, child := range node.Children {
+		wrapText(child)
+	}
+}
+
 // Pass 4: Calculate fit heights bottom-up
 func calculateFitHeights(node *Node) {
 	// First, calculate fit heights for all children
@@ -142,8 +213,12 @@ func calculateFitHeights(node *Node) {
 		var contentHeight float64
 
 		if len(node.Children) == 0 {
-			// Leaf node - content height is 0 for boxes
-			contentHeight = 0
+			// Leaf node - content height depends on type
+			if node.Type == TextType {
+				contentHeight = measureTextHeight(node.Value, node.FontSize, node.FontType)
+			} else {
+				contentHeight = 0
+			}
 		} else if node.Direction == TopToBottom {
 			// Vertical layout: sum children heights + gaps
 			for i, child := range node.Children {
@@ -228,6 +303,47 @@ func calculateGrowHeights(node *Node) {
 	// Recursively process children
 	for _, child := range node.Children {
 		calculateGrowHeights(child)
+	}
+}
+
+// Shrink heights when content exceeds available space
+func shrinkHeights(node *Node) {
+	if len(node.Children) == 0 {
+		return
+	}
+
+	var availableHeight float64
+	if node.Height.Type == FixedType || node.Height.Type == FitType {
+		availableHeight = node.Height.Value - node.Padding[0] - node.Padding[2]
+	}
+
+	if node.Direction == TopToBottom {
+		// Calculate total required height
+		var totalRequiredHeight float64
+		for i, child := range node.Children {
+			totalRequiredHeight += getActualHeight(child)
+			if i < len(node.Children)-1 {
+				totalRequiredHeight += node.ChildGap
+			}
+		}
+
+		// If content exceeds available space, shrink proportionally
+		if totalRequiredHeight > availableHeight && availableHeight > 0 {
+			shrinkRatio := availableHeight / totalRequiredHeight
+			for _, child := range node.Children {
+				newHeight := getActualHeight(child) * shrinkRatio
+				// Respect minimum constraints
+				if child.Height.Min != MinNotSet && newHeight < child.Height.Min {
+					newHeight = child.Height.Min
+				}
+				child.Height.Value = newHeight
+			}
+		}
+	}
+
+	// Recursively process children
+	for _, child := range node.Children {
+		shrinkHeights(child)
 	}
 }
 
@@ -328,6 +444,186 @@ func calculatePositions(node *Node) {
 	for _, child := range node.Children {
 		calculatePositions(child)
 	}
+}
+
+// getFontFace returns a font.Face for the given font type and size
+func getFontFace(fontType string, fontSize float64) font.Face {
+	ttfFont, exists := FontCache[fontType]
+	if !exists {
+		return nil
+	}
+
+	return truetype.NewFace(ttfFont, &truetype.Options{
+		Size: fontSize,
+		DPI:  72, // Standard DPI
+	})
+}
+
+// measureTextWidth measures the width of text using the specified font
+func measureTextWidth(text string, fontSize float64, fontType string) float64 {
+	face := getFontFace(fontType, fontSize)
+	if face == nil {
+		// Fallback to approximation if font not available
+		return fontSize * 0.6 * float64(len(text))
+	}
+	defer face.Close()
+
+	// Split text into lines and measure the widest line
+	lines := strings.Split(text, "\n")
+	var maxWidth float64
+
+	for _, line := range lines {
+		var lineWidth float64
+		for _, r := range line {
+			advance, ok := face.GlyphAdvance(r)
+			if ok {
+				lineWidth += float64(advance) / 64.0 // Convert from fixed.Int26_6 to float64
+			}
+		}
+		if lineWidth > maxWidth {
+			maxWidth = lineWidth
+		}
+	}
+
+	return maxWidth
+}
+
+// measureTextHeight measures the height of text using the specified font
+func measureTextHeight(text string, fontSize float64, fontType string) float64 {
+	face := getFontFace(fontType, fontSize)
+	if face == nil {
+		// Fallback to approximation if font not available
+		lines := strings.Count(text, "\n") + 1
+		return fontSize * 1.2 * float64(lines)
+	}
+	defer face.Close()
+
+	metrics := face.Metrics()
+	lineHeight := float64(metrics.Height) / 64.0 // Convert from fixed.Int26_6 to float64
+
+	// Count lines in text
+	lines := strings.Count(text, "\n") + 1
+
+	return lineHeight * float64(lines)
+}
+
+// wrapTextToWidth wraps text to fit within the specified width
+func wrapTextToWidth(text string, maxWidth float64, fontSize float64, fontType string) string {
+	if maxWidth <= 0 {
+		return text
+	}
+
+	face := getFontFace(fontType, fontSize)
+	if face == nil {
+		// Fallback to character-based wrapping if font not available
+		charWidth := fontSize * 0.6
+		maxCharsPerLine := int(maxWidth / charWidth)
+		if maxCharsPerLine <= 0 {
+			return text
+		}
+		return wrapTextByCharCount(text, maxCharsPerLine)
+	}
+	defer face.Close()
+
+	words := strings.Fields(text)
+	if len(words) == 0 {
+		return text
+	}
+
+	var result strings.Builder
+	var currentLine strings.Builder
+	var currentLineWidth float64
+
+	for _, word := range words {
+		// Measure word width
+		var wordWidth float64
+		for _, r := range word {
+			advance, ok := face.GlyphAdvance(r)
+			if ok {
+				wordWidth += float64(advance) / 64.0
+			}
+		}
+
+		// Measure space width (if not first word on line)
+		var spaceWidth float64
+		if currentLine.Len() > 0 {
+			advance, ok := face.GlyphAdvance(' ')
+			if ok {
+				spaceWidth = float64(advance) / 64.0
+			}
+		}
+
+		// Check if adding this word would exceed the line width
+		if currentLine.Len() > 0 && currentLineWidth+spaceWidth+wordWidth > maxWidth {
+			// Start a new line
+			if result.Len() > 0 {
+				result.WriteString("\n")
+			}
+			result.WriteString(currentLine.String())
+			currentLine.Reset()
+			currentLine.WriteString(word)
+			currentLineWidth = wordWidth
+		} else {
+			// Add word to current line
+			if currentLine.Len() > 0 {
+				currentLine.WriteString(" ")
+				currentLineWidth += spaceWidth
+			}
+			currentLine.WriteString(word)
+			currentLineWidth += wordWidth
+		}
+	}
+
+	// Add the last line
+	if currentLine.Len() > 0 {
+		if result.Len() > 0 {
+			result.WriteString("\n")
+		}
+		result.WriteString(currentLine.String())
+	}
+
+	return result.String()
+}
+
+// wrapTextByCharCount is a fallback function for character-based wrapping
+func wrapTextByCharCount(text string, maxCharsPerLine int) string {
+	words := strings.Fields(text)
+	var result strings.Builder
+	var currentLine strings.Builder
+
+	for _, word := range words {
+		// Check if adding this word would exceed the line length
+		testLine := currentLine.String()
+		if testLine != "" {
+			testLine += " "
+		}
+		testLine += word
+
+		if len(testLine) <= maxCharsPerLine {
+			if currentLine.Len() > 0 {
+				currentLine.WriteString(" ")
+			}
+			currentLine.WriteString(word)
+		} else {
+			// Start a new line
+			if result.Len() > 0 {
+				result.WriteString("\n")
+			}
+			result.WriteString(currentLine.String())
+			currentLine.Reset()
+			currentLine.WriteString(word)
+		}
+	}
+
+	// Add the last line
+	if currentLine.Len() > 0 {
+		if result.Len() > 0 {
+			result.WriteString("\n")
+		}
+		result.WriteString(currentLine.String())
+	}
+
+	return result.String()
 }
 
 // Helper functions
