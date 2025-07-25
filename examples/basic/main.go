@@ -17,6 +17,10 @@ func main() {
 		panic(err)
 	}
 
+	sahar.ImageCache = map[string]string{
+		"logo": "./logo.png",
+	}
+
 	root := sahar.Layout(
 		sahar.Box(
 			// for debugging purposes border can be set
@@ -24,7 +28,26 @@ func main() {
 			sahar.Sizing(
 				sahar.A4()...,
 			),
-			sahar.Alignment(sahar.Center, sahar.Middle),
+			// sahar.Alignment(sahar.Center, sahar.Middle),
+			sahar.Direction(sahar.TopToBottom),
+
+			// sahar.Box(
+			// 	sahar.Border(1),
+			// 	sahar.Alignment(sahar.Center, sahar.Middle),
+			// 	sahar.Sizing(
+			// 		sahar.Grow(),
+			// 		sahar.Fixed(100),
+			// 	),
+
+			sahar.Image(
+				"logo",
+				sahar.Border(1),
+				sahar.Sizing(
+					sahar.Fixed(100),
+					sahar.Fixed(100),
+				),
+			),
+			// ),
 
 			sahar.Text(
 				"123 Hello World!",
@@ -46,7 +69,7 @@ func main() {
 	}
 	defer pdfFile.Close()
 
-	err = sahar.RenderToPDF(root, pdfFile)
+	err = sahar.RenderToPDF(pdfFile, root)
 	if err != nil {
 		panic(err)
 	}

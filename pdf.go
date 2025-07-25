@@ -9,21 +9,24 @@ import (
 )
 
 // RenderToPDF renders the node tree to a PDF and writes it to the provided writer
-func RenderToPDF(root *Node, writer io.Writer) error {
-	if root == nil {
-		return fmt.Errorf("root node cannot be nil")
+func RenderToPDF(writer io.Writer, nodes ...*Node) error {
+	if len(nodes) == 0 {
+		return fmt.Errorf("there is no node to render")
 	}
 
 	// Create a new PDF document
 	pdf := fpdf.New("P", "pt", "A4", "")
-	pdf.AddPage()
 
-	// Set default font if not already set
-	pdf.SetFont("Arial", "", 12)
+	for _, node := range nodes {
+		pdf.AddPage()
 
-	// Render the node tree
-	if err := renderNode(pdf, root); err != nil {
-		return fmt.Errorf("failed to render node: %w", err)
+		// Set default font if not already set
+		pdf.SetFont("Arial", "", 12)
+
+		// Render the node tree
+		if err := renderNode(pdf, node); err != nil {
+			return fmt.Errorf("failed to render node: %w", err)
+		}
 	}
 
 	// Write PDF to the writer
@@ -170,27 +173,21 @@ func renderText(pdf *fpdf.Fpdf, node *Node) error {
 
 // renderImage renders an image node (placeholder implementation)
 func renderImage(pdf *fpdf.Fpdf, node *Node) error {
+	if node.Border > 0 {
+		renderBox(pdf, node)
+	}
+
 	x := node.Position.X
 	y := node.Position.Y
 	width := node.Width.Value
 	height := node.Height.Value
 
-	// For now, just draw a placeholder rectangle with "IMAGE" text
-	pdf.SetLineWidth(1)
-	pdf.SetDrawColor(128, 128, 128) // Gray border
-	pdf.SetFillColor(240, 240, 240) // Light gray fill
-	pdf.Rect(x, y, width, height, "DF")
+	imageNameStr, ok := ImageCache[node.Value]
+	if !ok {
+		return fmt.Errorf("image not found: %s", node.Value)
+	}
 
-	// Add "IMAGE" text in the center
-	pdf.SetFont("Arial", "", 12)
-	pdf.SetTextColor(128, 128, 128)
-	textWidth := pdf.GetStringWidth("IMAGE")
-	_, textHeight := pdf.GetFontSize()
-
-	textX := x + (width-textWidth)/2
-	textY := y + (height+textHeight)/2
-
-	pdf.Text(textX, textY, "IMAGE")
+	pdf.Image(imageNameStr, x, y, width, height, false, "", 0, "")
 
 	return nil
 }

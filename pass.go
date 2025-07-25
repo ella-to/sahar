@@ -8,9 +8,6 @@ import (
 	"golang.org/x/image/font"
 )
 
-// FontCache stores loaded fonts to avoid reloading
-var FontCache = make(map[string]*truetype.Font)
-
 // Layout performs multi-pass layout calculation on the node tree
 func Layout(root *Node) *Node {
 	if root == nil {

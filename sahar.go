@@ -1,6 +1,16 @@
 package sahar
 
-import "math"
+import (
+	"math"
+
+	"github.com/golang/freetype/truetype"
+)
+
+// FontCache stores loaded fonts to avoid reloading
+var FontCache = make(map[string]*truetype.Font)
+
+// ImageCache assigns a name to an image file path
+var ImageCache = make(map[string]string)
 
 type Horizontal int
 
@@ -141,6 +151,32 @@ func Box(opts ...nodeOpt) *Node {
 	n := &Node{
 		Type:      BoxType,
 		Direction: LeftToRight,
+		Width: Size{
+			Type:  FitType,
+			Value: 0,
+			Max:   MaxNotSet,
+			Min:   MinNotSet,
+		},
+		Height: Size{
+			Type:  FitType,
+			Value: 0,
+			Max:   MaxNotSet,
+			Min:   MinNotSet,
+		},
+	}
+
+	for _, opt := range opts {
+		opt.configureNode(n)
+	}
+
+	return n
+}
+
+func Image(name string, opts ...nodeOpt) *Node {
+	n := &Node{
+		Type:      ImageType,
+		Direction: LeftToRight,
+		Value:     name,
 		Width: Size{
 			Type:  FitType,
 			Value: 0,
