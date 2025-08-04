@@ -70,21 +70,24 @@ type Size struct {
 }
 
 type Node struct {
-	Direction      direction
-	Type           Type
-	Value          string  // For Text nodes
-	FontSize       float64 // For Text nodes
-	FontType       string  // For Text nodes
-	FontLineHeight float64 // For Text nodes
-	Position       Position
-	ChildGap       float64 // Space between children
-	Width, Height  Size
-	Padding        [4]float64 // Top, Right, Bottom, Left
-	Horizontal     Horizontal
-	Vertical       Vertical
-	Parent         *Node
-	Children       []*Node
-	Border         float64 // Border width for Box nodes
+	Direction       direction
+	Type            Type
+	Value           string  // For Text nodes
+	FontColor       string  // For Text nodes
+	FontSize        float64 // For Text nodes
+	FontType        string  // For Text nodes
+	FontLineHeight  float64 // For Text nodes
+	Position        Position
+	ChildGap        float64 // Space between children
+	Width, Height   Size
+	Padding         [4]float64 // Top, Right, Bottom, Left
+	Horizontal      Horizontal
+	Vertical        Vertical
+	Parent          *Node
+	Children        []*Node
+	Border          float64 // Border width for Box nodes
+	BorderColor     string  // Border color for Box nodes
+	BackgroundColor string  // Background color for Box nodes
 }
 
 var _ nodeOpt = (*Node)(nil)
@@ -207,6 +210,12 @@ func FontType(fontType string) textOpt {
 	})
 }
 
+func FontColor(color string) textOpt {
+	return textOptFunc(func(n *Node) {
+		n.FontColor = color
+	})
+}
+
 func ChildGap(gap float64) nodeOpt {
 	return nodeOptFunc(func(n *Node) {
 		n.ChildGap = gap
@@ -321,6 +330,18 @@ func Sizing(opts ...sizingOpt) nodeOpt {
 func Direction(dir direction) nodeOpt {
 	return nodeOptFunc(func(n *Node) {
 		n.Direction = dir
+	})
+}
+
+func BackgroundColor(color string) nodeOpt {
+	return nodeOptFunc(func(n *Node) {
+		n.BackgroundColor = color
+	})
+}
+
+func BorderColor(color string) nodeOpt {
+	return nodeOptFunc(func(n *Node) {
+		n.BorderColor = color
 	})
 }
 

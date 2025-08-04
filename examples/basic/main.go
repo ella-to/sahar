@@ -26,6 +26,7 @@ func main() {
 			),
 			// sahar.Alignment(sahar.Center, sahar.Middle),
 			sahar.Direction(sahar.TopToBottom),
+			// sahar.BackgroundColor("#ff0000"),
 
 			// sahar.Box(
 			// 	sahar.Border(1),
@@ -37,7 +38,8 @@ func main() {
 
 			sahar.Image(
 				"./logo",
-				sahar.Border(1),
+				sahar.Border(0),
+				sahar.BorderColor("#ff0000"),
 				sahar.Sizing(
 					sahar.Fixed(100),
 					sahar.Fixed(100),
@@ -49,6 +51,8 @@ func main() {
 				"123 Hello World!",
 				sahar.FontType("Arial"),
 				sahar.FontSize(20),
+				sahar.FontColor("#ff0000"),
+
 				// for debugging purposes border can be set
 				// sahar.Border(1),
 			),

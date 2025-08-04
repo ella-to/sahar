@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"codeberg.org/go-pdf/fpdf"
@@ -68,22 +69,28 @@ func renderNode(pdf *fpdf.Fpdf, node *Node) error {
 
 // renderBox renders a box node (draws a rectangle)
 func renderBox(pdf *fpdf.Fpdf, node *Node) error {
-	if node.Border == 0 {
-		return nil // No border to render
-	}
-
 	x := node.Position.X
 	y := node.Position.Y
 	width := node.Width.Value
 	height := node.Height.Value
 
 	// Set line width and color for the box border
-	pdf.SetLineWidth(0)
-	pdf.SetDrawColor(0, 0, 0)       // Black border
-	pdf.SetFillColor(255, 255, 255) // White fill
+	pdf.SetLineWidth(node.Border)
+
+	r, g, b, err := hexToRGB(node.BorderColor, "#000000")
+	if err != nil {
+		return fmt.Errorf("invalid border color: %w", err)
+	}
+	pdf.SetDrawColor(r, g, b) // Set border color
+
+	r, g, b, err = hexToRGB(node.BackgroundColor, "#FFFFFF")
+	if err != nil {
+		return fmt.Errorf("invalid background color: %w", err)
+	}
+	pdf.SetFillColor(r, g, b) // Set background color
 
 	// Draw rectangle (border only, no fill for now)
-	pdf.Rect(x, y, width, height, "D")
+	pdf.Rect(x, y, width, height, "FD")
 
 	return nil
 }
@@ -110,8 +117,13 @@ func renderText(pdf *fpdf.Fpdf, node *Node) error {
 		pdf.SetFont(fontName, "", node.FontSize)
 	}
 
+	r, g, b, err := hexToRGB(node.FontColor, "#000000")
+	if err != nil {
+		return fmt.Errorf("invalid font color: %w", err)
+	}
+
 	// Set text color
-	pdf.SetTextColor(0, 0, 0) // Black text
+	pdf.SetTextColor(r, g, b)
 
 	// Handle multi-line text
 	lines := strings.Split(node.Value, "\n")
@@ -311,4 +323,31 @@ func detectImageType(filepath string) (string, error) {
 	default:
 		return "", fmt.Errorf("unsupported image type: %s", contentType)
 	}
+}
+
+func hexToRGB(hex string, defaultColor string) (r, g, b int, err error) {
+	if hex == "" {
+		hex = defaultColor
+	}
+
+	hex = strings.TrimPrefix(hex, "#")
+	if len(hex) != 6 {
+		err = fmt.Errorf("invalid hex color: %s", hex)
+		return
+	}
+
+	rPart, err := strconv.ParseUint(hex[0:2], 16, 8)
+	if err != nil {
+		return
+	}
+	gPart, err := strconv.ParseUint(hex[2:4], 16, 8)
+	if err != nil {
+		return
+	}
+	bPart, err := strconv.ParseUint(hex[4:6], 16, 8)
+	if err != nil {
+		return
+	}
+
+	return int(rPart), int(gPart), int(bPart), nil
 }
