@@ -17,10 +17,6 @@ func main() {
 		panic(err)
 	}
 
-	sahar.ImageCache = map[string]string{
-		"logo": "./logo.png",
-	}
-
 	root := sahar.Layout(
 		sahar.Box(
 			// for debugging purposes border can be set
@@ -40,7 +36,7 @@ func main() {
 			// 	),
 
 			sahar.Image(
-				"logo",
+				"./logo",
 				sahar.Border(1),
 				sahar.Sizing(
 					sahar.Fixed(100),

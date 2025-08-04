@@ -3,6 +3,8 @@ package sahar
 import (
 	"fmt"
 	"io"
+	"net/http"
+	"os"
 	"strings"
 
 	"codeberg.org/go-pdf/fpdf"
@@ -182,12 +184,15 @@ func renderImage(pdf *fpdf.Fpdf, node *Node) error {
 	width := node.Width.Value
 	height := node.Height.Value
 
-	imageNameStr, ok := ImageCache[node.Value]
-	if !ok {
-		return fmt.Errorf("image not found: %s", node.Value)
+	imageType, err := detectImageType(node.Value)
+	if err != nil {
+		return fmt.Errorf("failed to detect image type: %w", err)
 	}
 
-	pdf.Image(imageNameStr, x, y, width, height, false, "", 0, "")
+	pdf.ImageOptions(node.Value, x, y, width, height, false, fpdf.ImageOptions{
+		ReadDpi:   false,
+		ImageType: imageType,
+	}, 0, "")
 
 	return nil
 }
@@ -276,5 +281,34 @@ func DefaultPDFOptions() PDFOptions {
 		MarginLeft:      72, // 1 inch
 		DefaultFont:     "Arial",
 		DefaultFontSize: 12,
+	}
+}
+
+func detectImageType(filepath string) (string, error) {
+	file, err := os.Open(filepath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	// Read first 512 bytes
+	buf := make([]byte, 512)
+	_, err = file.Read(buf)
+	if err != nil {
+		panic(err)
+	}
+
+	// Detect MIME type
+	contentType := http.DetectContentType(buf)
+
+	switch {
+	case strings.HasPrefix(contentType, "image/jpeg"):
+		return "JPG", nil
+	case strings.HasPrefix(contentType, "image/png"):
+		return "PNG", nil
+	case strings.HasPrefix(contentType, "image/gif"):
+		return "GIF", nil
+	default:
+		return "", fmt.Errorf("unsupported image type: %s", contentType)
 	}
 }

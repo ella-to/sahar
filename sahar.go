@@ -9,9 +9,6 @@ import (
 // FontCache stores loaded fonts to avoid reloading
 var FontCache = make(map[string]*truetype.Font)
 
-// ImageCache assigns a name to an image file path
-var ImageCache = make(map[string]string)
-
 type Horizontal int
 
 const (
