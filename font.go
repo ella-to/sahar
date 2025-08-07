@@ -5,7 +5,11 @@ import (
 	"os"
 
 	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/font"
 )
+
+// fontCache stores loaded fonts to avoid reloading
+var fontCache = make(map[string]*truetype.Font)
 
 func LoadFonts(src ...string) error {
 	if len(src) == 0 {
@@ -30,8 +34,21 @@ func LoadFonts(src ...string) error {
 			return fmt.Errorf("failed to parse font %s from %s: %w", name, path, err)
 		}
 
-		FontCache[name] = ttfFont
+		fontCache[name] = ttfFont
 	}
 
 	return nil
+}
+
+// getFontFace returns a font.Face for the given font type and size
+func getFontFace(fontType string, fontSize float64) font.Face {
+	ttfFont, exists := fontCache[fontType]
+	if !exists {
+		return nil
+	}
+
+	return truetype.NewFace(ttfFont, &truetype.Options{
+		Size: fontSize,
+		DPI:  72, // Standard DPI
+	})
 }

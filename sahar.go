@@ -2,12 +2,7 @@ package sahar
 
 import (
 	"math"
-
-	"github.com/golang/freetype/truetype"
 )
-
-// FontCache stores loaded fonts to avoid reloading
-var FontCache = make(map[string]*truetype.Font)
 
 type Horizontal int
 

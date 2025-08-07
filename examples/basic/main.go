@@ -21,10 +21,10 @@ func main() {
 		sahar.Box(
 			// for debugging purposes border can be set
 			// sahar.Border(1),
-			sahar.Sizing(
-				sahar.A4()...,
-			),
-			// sahar.Alignment(sahar.Center, sahar.Middle),
+			// sahar.Sizing(
+			// 	sahar.A4()...,
+			// ),
+			sahar.Alignment(sahar.Center, sahar.Middle),
 			sahar.Direction(sahar.TopToBottom),
 			// sahar.BackgroundColor("#ff0000"),
 

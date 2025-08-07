@@ -3,9 +3,6 @@ package sahar
 import (
 	"math"
 	"strings"
-
-	"github.com/golang/freetype/truetype"
-	"golang.org/x/image/font"
 )
 
 // Layout performs multi-pass layout calculation on the node tree
@@ -441,19 +438,6 @@ func calculatePositions(node *Node) {
 	for _, child := range node.Children {
 		calculatePositions(child)
 	}
-}
-
-// getFontFace returns a font.Face for the given font type and size
-func getFontFace(fontType string, fontSize float64) font.Face {
-	ttfFont, exists := FontCache[fontType]
-	if !exists {
-		return nil
-	}
-
-	return truetype.NewFace(ttfFont, &truetype.Options{
-		Size: fontSize,
-		DPI:  72, // Standard DPI
-	})
 }
 
 // measureTextWidth measures the width of text using the specified font

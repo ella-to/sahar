@@ -21,7 +21,10 @@ func RenderToPDF(writer io.Writer, nodes ...*Node) error {
 	pdf := fpdf.New("P", "pt", "A4", "")
 
 	for _, node := range nodes {
-		pdf.AddPage()
+		pdf.AddPageFormat("P", fpdf.SizeType{
+			Wd: node.Width.Value,
+			Ht: node.Height.Value,
+		})
 
 		// Set default font if not already set
 		pdf.SetFont("Arial", "", 12)
