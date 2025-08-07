@@ -74,10 +74,10 @@ func calculateFitWidths(node *Node) {
 		contentWidth += node.Padding[1] + node.Padding[3] // right + left
 
 		// Apply min/max constraints
-		if node.Width.Min != MinNotSet && contentWidth < node.Width.Min {
+		if node.Width.Min != minNotSet && contentWidth < node.Width.Min {
 			contentWidth = node.Width.Min
 		}
-		if node.Width.Max != MaxNotSet && contentWidth > node.Width.Max {
+		if node.Width.Max != maxNotSet && contentWidth > node.Width.Max {
 			contentWidth = node.Width.Max
 		}
 
@@ -166,7 +166,7 @@ func shrinkWidths(node *Node) {
 			for _, child := range node.Children {
 				newWidth := getActualWidth(child) * shrinkRatio
 				// Respect minimum constraints
-				if child.Width.Min != MinNotSet && newWidth < child.Width.Min {
+				if child.Width.Min != minNotSet && newWidth < child.Width.Min {
 					newWidth = child.Width.Min
 				}
 				child.Width.Value = newWidth
@@ -235,10 +235,10 @@ func calculateFitHeights(node *Node) {
 		contentHeight += node.Padding[0] + node.Padding[2] // top + bottom
 
 		// Apply min/max constraints
-		if node.Height.Min != MinNotSet && contentHeight < node.Height.Min {
+		if node.Height.Min != minNotSet && contentHeight < node.Height.Min {
 			contentHeight = node.Height.Min
 		}
-		if node.Height.Max != MaxNotSet && contentHeight > node.Height.Max {
+		if node.Height.Max != maxNotSet && contentHeight > node.Height.Max {
 			contentHeight = node.Height.Max
 		}
 
@@ -327,7 +327,7 @@ func shrinkHeights(node *Node) {
 			for _, child := range node.Children {
 				newHeight := getActualHeight(child) * shrinkRatio
 				// Respect minimum constraints
-				if child.Height.Min != MinNotSet && newHeight < child.Height.Min {
+				if child.Height.Min != minNotSet && newHeight < child.Height.Min {
 					newHeight = child.Height.Min
 				}
 				child.Height.Value = newHeight
