@@ -6,6 +6,75 @@ import (
 	"ella.to/sahar"
 )
 
+func Header() *sahar.Node {
+	return sahar.Box(
+		sahar.Direction(sahar.LeftToRight),
+		sahar.Alignment(sahar.Left, sahar.Middle),
+		sahar.BorderColor("#ffffff"),
+		sahar.ChildGap(10),
+
+		sahar.Image(
+			"./logo",
+			sahar.Sizing(sahar.Fixed(50), sahar.Fixed(50)),
+		),
+
+		sahar.Box(
+			sahar.Direction(sahar.TopToBottom),
+			sahar.BorderColor("#ffffff"),
+			sahar.ChildGap(2),
+
+			// Children
+			sahar.Text(
+				"Company Name",
+				sahar.FontType("Arial"),
+				sahar.FontSize(18),
+				sahar.FontColor("#5478ac"),
+			),
+
+			sahar.Text(
+				"Compnay Message",
+				sahar.FontType("Arial"),
+				sahar.FontSize(12),
+				sahar.FontColor("#717171"),
+			),
+		),
+	)
+}
+
+func Main() *sahar.Node {
+	return sahar.Box(
+		sahar.BorderColor("#ffffff"),
+		sahar.Sizing(sahar.Grow(), sahar.Grow()),
+		sahar.Alignment(sahar.Right, sahar.Bottom),
+
+		sahar.Box(
+			sahar.BorderColor("#ffffff"),
+			sahar.Direction(sahar.TopToBottom),
+			sahar.Alignment(sahar.Right, sahar.Middle),
+			sahar.ChildGap(2),
+
+			sahar.Text(
+				"Full Name",
+				sahar.FontType("Arial"),
+				sahar.FontSize(16),
+				sahar.FontColor("#5478ac"),
+			),
+			sahar.Text(
+				"Job Title",
+				sahar.FontType("Arial"),
+				sahar.FontSize(12),
+				sahar.FontColor("#717171"),
+			),
+			sahar.Text(
+				"Email / Other",
+				sahar.FontType("Arial"),
+				sahar.FontSize(12),
+				sahar.FontColor("#717171"),
+			),
+		),
+	)
+}
+
 func main() {
 	//
 	// load fonts
@@ -19,43 +88,12 @@ func main() {
 
 	root := sahar.Layout(
 		sahar.Box(
-			// for debugging purposes border can be set
-			// sahar.Border(1),
-			// sahar.Sizing(
-			// 	sahar.A4()...,
-			// ),
-			sahar.Alignment(sahar.Center, sahar.Middle),
 			sahar.Direction(sahar.TopToBottom),
-			// sahar.BackgroundColor("#ff0000"),
+			sahar.Sizing(sahar.Fixed(300), sahar.Fixed(150)),
+			sahar.Padding(10, 10, 10, 10),
 
-			// sahar.Box(
-			// 	sahar.Border(1),
-			// 	sahar.Alignment(sahar.Center, sahar.Middle),
-			// 	sahar.Sizing(
-			// 		sahar.Grow(),
-			// 		sahar.Fixed(100),
-			// 	),
-
-			sahar.Image(
-				"./logo",
-				sahar.Border(0),
-				sahar.BorderColor("#ff0000"),
-				sahar.Sizing(
-					sahar.Fixed(100),
-					sahar.Fixed(100),
-				),
-			),
-			// ),
-
-			sahar.Text(
-				"123 Hello World!",
-				sahar.FontType("Arial"),
-				sahar.FontSize(20),
-				sahar.FontColor("#ff0000"),
-
-				// for debugging purposes border can be set
-				// sahar.Border(1),
-			),
+			Header(),
+			Main(),
 		),
 	)
 
