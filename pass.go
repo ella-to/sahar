@@ -87,53 +87,72 @@ func calculateFitWidths(node *Node) {
 
 // Pass 2: Calculate grow widths top-down
 func calculateGrowWidths(node *Node) {
-	if len(node.Children) == 0 {
-		return
-	}
-
-	var availableWidth float64
-	if node.Width.Type == FixedType || node.Width.Type == FitType {
-		availableWidth = node.Width.Value - node.Padding[1] - node.Padding[3] // subtract padding
-	}
-
-	if node.Direction == LeftToRight {
-		// Calculate space taken by fixed and fit children
-		var usedWidth float64
-		var growCount int
-
-		for i, child := range node.Children {
-			if child.Width.Type == GrowType {
-				growCount++
-			} else {
-				usedWidth += getActualWidth(child)
-			}
-			if i < len(node.Children)-1 {
-				usedWidth += node.ChildGap
-			}
+	// Calculate and distribute width to children of this node
+	if len(node.Children) > 0 {
+		var availableWidth float64
+		// Any node that has a width value can distribute space to its children
+		if node.Width.Type == FixedType || node.Width.Type == FitType || (node.Width.Type == GrowType && node.Width.Value > 0) {
+			availableWidth = node.Width.Value - node.Padding[1] - node.Padding[3] // subtract padding
 		}
 
-		// Distribute remaining space among grow children
-		if growCount > 0 {
-			remainingWidth := availableWidth - usedWidth
-			if remainingWidth > 0 {
-				growWidth := remainingWidth / float64(growCount)
+		if availableWidth > 0 {
+			if node.Direction == LeftToRight {
+				// Horizontal layout: distribute width among children
+				var usedWidth float64
+				var growCount int
+
+				// First pass: calculate space used by fixed and fit children
 				for _, child := range node.Children {
 					if child.Width.Type == GrowType {
-						child.Width.Value = math.Max(0, growWidth)
+						growCount++
+					} else {
+						usedWidth += getActualWidth(child)
+					}
+				}
+
+				// Add gaps between all children
+				if len(node.Children) > 1 {
+					usedWidth += node.ChildGap * float64(len(node.Children)-1)
+				}
+
+				// Second pass: distribute remaining space to grow children
+				if growCount > 0 {
+					remainingWidth := availableWidth - usedWidth
+					if remainingWidth > 0 {
+						growWidth := remainingWidth / float64(growCount)
+						for _, child := range node.Children {
+							if child.Width.Type == GrowType {
+								child.Width.Value = math.Max(0, growWidth)
+							}
+						}
+					} else {
+						// If no space left, set grow children to 0
+						for _, child := range node.Children {
+							if child.Width.Type == GrowType {
+								child.Width.Value = 0
+							}
+						}
+					}
+				}
+			} else {
+				// Vertical layout: all children can use full available width
+				for _, child := range node.Children {
+					if child.Width.Type == GrowType {
+						child.Width.Value = availableWidth
 					}
 				}
 			}
-		}
-	} else {
-		// Vertical layout: all children can use full width
-		for _, child := range node.Children {
-			if child.Width.Type == GrowType {
-				child.Width.Value = math.Max(0, availableWidth)
+		} else {
+			// No available width to distribute
+			for _, child := range node.Children {
+				if child.Width.Type == GrowType {
+					child.Width.Value = 0
+				}
 			}
 		}
 	}
 
-	// Recursively process children
+	// Recursively process all children
 	for _, child := range node.Children {
 		calculateGrowWidths(child)
 	}
@@ -248,53 +267,72 @@ func calculateFitHeights(node *Node) {
 
 // Pass 5: Calculate grow heights top-down
 func calculateGrowHeights(node *Node) {
-	if len(node.Children) == 0 {
-		return
-	}
-
-	var availableHeight float64
-	if node.Height.Type == FixedType || node.Height.Type == FitType {
-		availableHeight = node.Height.Value - node.Padding[0] - node.Padding[2] // subtract padding
-	}
-
-	if node.Direction == TopToBottom {
-		// Calculate space taken by fixed and fit children
-		var usedHeight float64
-		var growCount int
-
-		for i, child := range node.Children {
-			if child.Height.Type == GrowType {
-				growCount++
-			} else {
-				usedHeight += getActualHeight(child)
-			}
-			if i < len(node.Children)-1 {
-				usedHeight += node.ChildGap
-			}
+	// Calculate and distribute height to children of this node
+	if len(node.Children) > 0 {
+		var availableHeight float64
+		// Any node that has a height value can distribute space to its children
+		if node.Height.Type == FixedType || node.Height.Type == FitType || (node.Height.Type == GrowType && node.Height.Value > 0) {
+			availableHeight = node.Height.Value - node.Padding[0] - node.Padding[2] // subtract padding
 		}
 
-		// Distribute remaining space among grow children
-		if growCount > 0 {
-			remainingHeight := availableHeight - usedHeight
-			if remainingHeight > 0 {
-				growHeight := remainingHeight / float64(growCount)
+		if availableHeight > 0 {
+			if node.Direction == TopToBottom {
+				// Vertical layout: distribute height among children
+				var usedHeight float64
+				var growCount int
+
+				// First pass: calculate space used by fixed and fit children
 				for _, child := range node.Children {
 					if child.Height.Type == GrowType {
-						child.Height.Value = math.Max(0, growHeight)
+						growCount++
+					} else {
+						usedHeight += getActualHeight(child)
+					}
+				}
+
+				// Add gaps between all children
+				if len(node.Children) > 1 {
+					usedHeight += node.ChildGap * float64(len(node.Children)-1)
+				}
+
+				// Second pass: distribute remaining space to grow children
+				if growCount > 0 {
+					remainingHeight := availableHeight - usedHeight
+					if remainingHeight > 0 {
+						growHeight := remainingHeight / float64(growCount)
+						for _, child := range node.Children {
+							if child.Height.Type == GrowType {
+								child.Height.Value = math.Max(0, growHeight)
+							}
+						}
+					} else {
+						// If no space left, set grow children to 0
+						for _, child := range node.Children {
+							if child.Height.Type == GrowType {
+								child.Height.Value = 0
+							}
+						}
+					}
+				}
+			} else {
+				// Horizontal layout: all children can use full available height
+				for _, child := range node.Children {
+					if child.Height.Type == GrowType {
+						child.Height.Value = availableHeight
 					}
 				}
 			}
-		}
-	} else {
-		// Horizontal layout: all children can use full height
-		for _, child := range node.Children {
-			if child.Height.Type == GrowType {
-				child.Height.Value = math.Max(0, availableHeight)
+		} else {
+			// No available height to distribute
+			for _, child := range node.Children {
+				if child.Height.Type == GrowType {
+					child.Height.Value = 0
+				}
 			}
 		}
 	}
 
-	// Recursively process children
+	// Recursively process all children
 	for _, child := range node.Children {
 		calculateGrowHeights(child)
 	}
