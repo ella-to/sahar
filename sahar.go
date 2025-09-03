@@ -313,14 +313,52 @@ func A4() []sizingOpt {
 		sizingOptFunc(func(s *Size) {
 			s.Type = FixedType
 			s.Value = 595.28 // A4 width in points
-			s.Max = 841.89   // A4 height in points
+			s.Max = 595.28   // A4 width in points
 			s.Min = 0        // No minimum size
 		}),
 		sizingOptFunc(func(s *Size) {
 			s.Type = FixedType
 			s.Value = 841.89 // A4 height in points
-			s.Max = 595.28   // A4 width in points
+			s.Max = 841.89   // A4 height in points
 			s.Min = 0        // No minimum size
+		}),
+	}
+}
+
+// USLetter is a custom sizing and should be used with Sizing
+// please use it as spread for example: Sizing(USLetter()...)
+func USLetter() []sizingOpt {
+	return []sizingOpt{
+		sizingOptFunc(func(s *Size) {
+			s.Type = FixedType
+			s.Value = 612 // USLetter width in points
+			s.Max = 612   // USLetter width in points
+			s.Min = 0     // No minimum size
+		}),
+		sizingOptFunc(func(s *Size) {
+			s.Type = FixedType
+			s.Value = 792 // USLetter height in points
+			s.Max = 792   // USLetter height in points
+			s.Min = 0     // No minimum size
+		}),
+	}
+}
+
+// USLegal is a custom sizing and should be used with Sizing
+// please use it as spread for example: Sizing(USLegal()...)
+func USLegal() []sizingOpt {
+	return []sizingOpt{
+		sizingOptFunc(func(s *Size) {
+			s.Type = FixedType
+			s.Value = 612 // USLegal width in points
+			s.Max = 612   // USLegal width in points
+			s.Min = 0     // No minimum size
+		}),
+		sizingOptFunc(func(s *Size) {
+			s.Type = FixedType
+			s.Value = 1008 // USLegal height in points
+			s.Max = 1008   // USLegal height in points
+			s.Min = 0      // No minimum size
 		}),
 	}
 }
