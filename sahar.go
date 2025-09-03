@@ -386,6 +386,16 @@ func BorderColor(color string) nodeOpt {
 	})
 }
 
+// Children appends new children to the parent node
+// this is useful if you have a dynamic component
+func Children(nodes ...*Node) nodeOpt {
+	return nodeOptFunc(func(n *Node) {
+		for _, node := range nodes {
+			node.configureNode(n)
+		}
+	})
+}
+
 //
 // OPTIONS
 //
