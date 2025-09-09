@@ -6,7 +6,7 @@ import (
 	"ella.to/sahar"
 )
 
-func Header() *sahar.Node {
+func Header(companyName string) *sahar.Node {
 	return sahar.Box(
 		sahar.Direction(sahar.LeftToRight),
 		sahar.Alignment(sahar.Left, sahar.Middle),
@@ -25,7 +25,7 @@ func Header() *sahar.Node {
 
 			// Children
 			sahar.Text(
-				"Company Name",
+				companyName,
 				sahar.FontType("Arial"),
 				sahar.FontSize(18),
 				sahar.FontColor("#5478ac"),
@@ -43,12 +43,12 @@ func Header() *sahar.Node {
 
 func Main() *sahar.Node {
 	return sahar.Box(
-		sahar.BorderColor("#ffffff"),
+		// sahar.BorderColor("#ffffff"),
 		sahar.Sizing(sahar.Grow(), sahar.Grow()),
 		sahar.Alignment(sahar.Right, sahar.Bottom),
 
 		sahar.Box(
-			sahar.BorderColor("#ffffff"),
+			// sahar.BorderColor("#ffffff"),
 			sahar.Direction(sahar.TopToBottom),
 			sahar.Alignment(sahar.Right, sahar.Middle),
 			sahar.ChildGap(2),
@@ -86,13 +86,24 @@ func main() {
 		panic(err)
 	}
 
-	root := sahar.Layout(
+	page1 := sahar.Layout(
 		sahar.Box(
 			sahar.Direction(sahar.TopToBottom),
 			sahar.Sizing(sahar.Fixed(300), sahar.Fixed(150)),
 			sahar.Padding(10, 10, 10, 10),
 
-			Header(),
+			Header("Compnay B"),
+			Main(),
+		),
+	)
+
+	page2 := sahar.Layout(
+		sahar.Box(
+			sahar.Direction(sahar.TopToBottom),
+			sahar.Sizing(sahar.Fixed(300), sahar.Fixed(150)),
+			sahar.Padding(10, 10, 10, 10),
+
+			Header("Compnay A"),
 			Main(),
 		),
 	)
@@ -107,7 +118,7 @@ func main() {
 	}
 	defer pdfFile.Close()
 
-	err = sahar.RenderToPDF(pdfFile, root)
+	err = sahar.RenderToPDF(pdfFile, page1, page2)
 	if err != nil {
 		panic(err)
 	}
