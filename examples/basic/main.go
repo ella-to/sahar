@@ -32,7 +32,7 @@ func Header(companyName string) *sahar.Node {
 			),
 
 			sahar.Text(
-				"Compnay Message",
+				"Company Message",
 				sahar.FontType("Arial"),
 				sahar.FontSize(12),
 				sahar.FontColor("#717171"),
@@ -92,7 +92,7 @@ func main() {
 			sahar.Sizing(sahar.Fixed(300), sahar.Fixed(150)),
 			sahar.Padding(10, 10, 10, 10),
 
-			Header("Compnay B"),
+			Header("Company B"),
 			Main(),
 		),
 	)
@@ -103,7 +103,7 @@ func main() {
 			sahar.Sizing(sahar.Fixed(300), sahar.Fixed(150)),
 			sahar.Padding(10, 10, 10, 10),
 
-			Header("Compnay A"),
+			Header("Company A"),
 			Main(),
 		),
 	)

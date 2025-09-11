@@ -400,7 +400,7 @@ func Sizing(opts ...sizingOpt) nodeOpt {
 	})
 }
 
-// Direction use for rendering the direction of the children. There is two possiblities
+// Direction use for rendering the direction of the children. There is two possibilities
 // either TopToBottom ot LeftToRight
 func Direction(dir direction) nodeOpt {
 	return nodeOptFunc(func(n *Node) {
