@@ -104,88 +104,110 @@ func renderText(pdf *fpdf.Fpdf, node *Node) error {
 		return nil
 	}
 
-	x := node.Position.X
-	y := node.Position.Y
-	width := node.Width.Value
-	height := node.Height.Value
-
 	if node.Border > 0 {
 		renderBox(pdf, node)
 	}
 
-	// Set font if specified
+	if err := setupTextFont(pdf, node); err != nil {
+		return err
+	}
+
+	if err := setupTextColor(pdf, node); err != nil {
+		return err
+	}
+
+	return renderTextLines(pdf, node)
+}
+
+// setupTextFont sets up the font for text rendering
+func setupTextFont(pdf *fpdf.Fpdf, node *Node) error {
 	if node.FontType != "" && node.FontSize > 0 {
-		// Map common font names to FPDF font names
 		fontName := mapFontName(node.FontType)
 		pdf.SetFont(fontName, "", node.FontSize)
 	}
+	return nil
+}
 
+// setupTextColor sets up the text color
+func setupTextColor(pdf *fpdf.Fpdf, node *Node) error {
 	r, g, b, err := hexToRGB(node.FontColor, "#000000")
 	if err != nil {
 		return fmt.Errorf("invalid font color: %w", err)
 	}
-
-	// Set text color
 	pdf.SetTextColor(r, g, b)
+	return nil
+}
 
-	// Handle multi-line text
+// renderTextLines handles the rendering of multiple text lines
+func renderTextLines(pdf *fpdf.Fpdf, node *Node) error {
 	lines := strings.Split(node.Value, "\n")
-
-	// Get line height
 	_, lineHeight := pdf.GetFontSize()
-	lineSpacing := lineHeight * 1.2 // Add some line spacing
+	lineSpacing := lineHeight * 1.2
 
-	// Calculate starting Y position based on vertical alignment
-	totalTextHeight := float64(len(lines)) * lineSpacing
-	var startY float64
+	startY := calculateVerticalPosition(node, lines, lineSpacing, lineHeight)
 
-	switch node.Vertical {
-	case Top:
-		startY = y + lineHeight // Start from top + font height
-	case Middle:
-		startY = y + (height-totalTextHeight)/2 + lineHeight
-	case Bottom:
-		startY = y + height - totalTextHeight + lineHeight
-	default:
-		startY = y + lineHeight
-	}
-
-	// Render each line
 	for i, line := range lines {
 		if line == "" {
 			continue
 		}
-
-		lineY := startY + float64(i)*lineSpacing
-
-		// Calculate X position based on horizontal alignment
-		var lineX float64
-		textWidth := pdf.GetStringWidth(line)
-
-		switch node.Horizontal {
-		case Left:
-			lineX = x + node.Padding[3] // Add left padding
-		case Center:
-			lineX = x + (width-textWidth)/2
-		case Right:
-			lineX = x + width - textWidth - node.Padding[1] // Subtract right padding
-		default:
-			lineX = x + node.Padding[3]
-		}
-
-		// Ensure text doesn't go outside the node bounds
-		if lineX < x {
-			lineX = x
-		}
-		if lineX+textWidth > x+width {
-			lineX = x + width - textWidth
-		}
-
-		// Draw the text
-		pdf.Text(lineX, lineY, line)
+		renderSingleLine(pdf, node, line, startY, i, lineSpacing)
 	}
 
 	return nil
+}
+
+// calculateVerticalPosition calculates the starting Y position based on vertical alignment
+func calculateVerticalPosition(node *Node, lines []string, lineSpacing, lineHeight float64) float64 {
+	y := node.Position.Y
+	height := node.Height.Value
+	totalTextHeight := float64(len(lines)) * lineSpacing
+
+	switch node.Vertical {
+	case Top:
+		return y + lineHeight
+	case Middle:
+		return y + (height-totalTextHeight)/2 + lineHeight
+	case Bottom:
+		return y + height - totalTextHeight + lineHeight
+	default:
+		return y + lineHeight
+	}
+}
+
+// renderSingleLine renders a single line of text
+func renderSingleLine(pdf *fpdf.Fpdf, node *Node, line string, startY float64, lineIndex int, lineSpacing float64) {
+	lineY := startY + float64(lineIndex)*lineSpacing
+	lineX := calculateHorizontalPosition(pdf, node, line)
+	pdf.Text(lineX, lineY, line)
+}
+
+// calculateHorizontalPosition calculates the X position based on horizontal alignment
+func calculateHorizontalPosition(pdf *fpdf.Fpdf, node *Node, line string) float64 {
+	x := node.Position.X
+	width := node.Width.Value
+	textWidth := pdf.GetStringWidth(line)
+
+	var lineX float64
+	switch node.Horizontal {
+	case Left:
+		lineX = x + node.Padding[3]
+	case Center:
+		lineX = x + (width-textWidth)/2
+	case Right:
+		lineX = x + width - textWidth - node.Padding[1]
+	default:
+		lineX = x + node.Padding[3]
+	}
+
+	// Ensure text doesn't go outside the node bounds
+	if lineX < x {
+		lineX = x
+	}
+	if lineX+textWidth > x+width {
+		lineX = x + width - textWidth
+	}
+
+	return lineX
 }
 
 // renderImage renders an image node (placeholder implementation)
