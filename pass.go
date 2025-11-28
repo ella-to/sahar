@@ -3,6 +3,8 @@ package sahar
 import (
 	"math"
 	"strings"
+
+	"golang.org/x/image/font"
 )
 
 // Layout performs multi-pass layout calculation on the node tree
@@ -87,74 +89,78 @@ func calculateFitWidths(node *Node) {
 
 // Pass 2: Calculate grow widths top-down
 func calculateGrowWidths(node *Node) {
-	// Calculate and distribute width to children of this node
 	if len(node.Children) > 0 {
-		var availableWidth float64
-		// Any node that has a width value can distribute space to its children
-		if node.Width.Type == FixedType || node.Width.Type == FitType || (node.Width.Type == GrowType && node.Width.Value > 0) {
-			availableWidth = node.Width.Value - node.Padding[1] - node.Padding[3] // subtract padding
-		}
-
-		if availableWidth > 0 {
-			if node.Direction == LeftToRight {
-				// Horizontal layout: distribute width among children
-				var usedWidth float64
-				var growCount int
-
-				// First pass: calculate space used by fixed and fit children
-				for _, child := range node.Children {
-					if child.Width.Type == GrowType {
-						growCount++
-					} else {
-						usedWidth += getActualWidth(child)
-					}
-				}
-
-				// Add gaps between all children
-				if len(node.Children) > 1 {
-					usedWidth += node.ChildGap * float64(len(node.Children)-1)
-				}
-
-				// Second pass: distribute remaining space to grow children
-				if growCount > 0 {
-					remainingWidth := availableWidth - usedWidth
-					if remainingWidth > 0 {
-						growWidth := remainingWidth / float64(growCount)
-						for _, child := range node.Children {
-							if child.Width.Type == GrowType {
-								child.Width.Value = math.Max(0, growWidth)
-							}
-						}
-					} else {
-						// If no space left, set grow children to 0
-						for _, child := range node.Children {
-							if child.Width.Type == GrowType {
-								child.Width.Value = 0
-							}
-						}
-					}
-				}
-			} else {
-				// Vertical layout: all children can use full available width
-				for _, child := range node.Children {
-					if child.Width.Type == GrowType {
-						child.Width.Value = availableWidth
-					}
-				}
-			}
-		} else {
-			// No available width to distribute
-			for _, child := range node.Children {
-				if child.Width.Type == GrowType {
-					child.Width.Value = 0
-				}
-			}
-		}
+		availableWidth := getAvailableWidth(node)
+		distributeGrowWidths(node, availableWidth)
 	}
 
 	// Recursively process all children
 	for _, child := range node.Children {
 		calculateGrowWidths(child)
+	}
+}
+
+// getAvailableWidth calculates the available width for children
+func getAvailableWidth(node *Node) float64 {
+	if node.Width.Type == FixedType || node.Width.Type == FitType || (node.Width.Type == GrowType && node.Width.Value > 0) {
+		return node.Width.Value - node.Padding[1] - node.Padding[3]
+	}
+	return 0
+}
+
+// distributeGrowWidths distributes available width to grow children
+func distributeGrowWidths(node *Node, availableWidth float64) {
+	if availableWidth <= 0 {
+		setGrowChildrenWidth(node.Children, 0)
+		return
+	}
+
+	if node.Direction == LeftToRight {
+		distributeHorizontalGrowWidths(node, availableWidth)
+	} else {
+		setGrowChildrenWidth(node.Children, availableWidth)
+	}
+}
+
+// distributeHorizontalGrowWidths handles width distribution for horizontal layouts
+func distributeHorizontalGrowWidths(node *Node, availableWidth float64) {
+	usedWidth, growCount := calculateUsedWidthAndGrowCount(node)
+
+	if growCount == 0 {
+		return
+	}
+
+	remainingWidth := availableWidth - usedWidth
+	if remainingWidth > 0 {
+		growWidth := remainingWidth / float64(growCount)
+		setGrowChildrenWidth(node.Children, math.Max(0, growWidth))
+	} else {
+		setGrowChildrenWidth(node.Children, 0)
+	}
+}
+
+// calculateUsedWidthAndGrowCount calculates space used by non-grow children and counts grow children
+func calculateUsedWidthAndGrowCount(node *Node) (usedWidth float64, growCount int) {
+	for _, child := range node.Children {
+		if child.Width.Type == GrowType {
+			growCount++
+		} else {
+			usedWidth += getActualWidth(child)
+		}
+	}
+
+	if len(node.Children) > 1 {
+		usedWidth += node.ChildGap * float64(len(node.Children)-1)
+	}
+	return
+}
+
+// setGrowChildrenWidth sets width for all grow children
+func setGrowChildrenWidth(children []*Node, width float64) {
+	for _, child := range children {
+		if child.Width.Type == GrowType {
+			child.Width.Value = width
+		}
 	}
 }
 
@@ -267,74 +273,78 @@ func calculateFitHeights(node *Node) {
 
 // Pass 5: Calculate grow heights top-down
 func calculateGrowHeights(node *Node) {
-	// Calculate and distribute height to children of this node
 	if len(node.Children) > 0 {
-		var availableHeight float64
-		// Any node that has a height value can distribute space to its children
-		if node.Height.Type == FixedType || node.Height.Type == FitType || (node.Height.Type == GrowType && node.Height.Value > 0) {
-			availableHeight = node.Height.Value - node.Padding[0] - node.Padding[2] // subtract padding
-		}
-
-		if availableHeight > 0 {
-			if node.Direction == TopToBottom {
-				// Vertical layout: distribute height among children
-				var usedHeight float64
-				var growCount int
-
-				// First pass: calculate space used by fixed and fit children
-				for _, child := range node.Children {
-					if child.Height.Type == GrowType {
-						growCount++
-					} else {
-						usedHeight += getActualHeight(child)
-					}
-				}
-
-				// Add gaps between all children
-				if len(node.Children) > 1 {
-					usedHeight += node.ChildGap * float64(len(node.Children)-1)
-				}
-
-				// Second pass: distribute remaining space to grow children
-				if growCount > 0 {
-					remainingHeight := availableHeight - usedHeight
-					if remainingHeight > 0 {
-						growHeight := remainingHeight / float64(growCount)
-						for _, child := range node.Children {
-							if child.Height.Type == GrowType {
-								child.Height.Value = math.Max(0, growHeight)
-							}
-						}
-					} else {
-						// If no space left, set grow children to 0
-						for _, child := range node.Children {
-							if child.Height.Type == GrowType {
-								child.Height.Value = 0
-							}
-						}
-					}
-				}
-			} else {
-				// Horizontal layout: all children can use full available height
-				for _, child := range node.Children {
-					if child.Height.Type == GrowType {
-						child.Height.Value = availableHeight
-					}
-				}
-			}
-		} else {
-			// No available height to distribute
-			for _, child := range node.Children {
-				if child.Height.Type == GrowType {
-					child.Height.Value = 0
-				}
-			}
-		}
+		availableHeight := getAvailableHeight(node)
+		distributeGrowHeights(node, availableHeight)
 	}
 
 	// Recursively process all children
 	for _, child := range node.Children {
 		calculateGrowHeights(child)
+	}
+}
+
+// getAvailableHeight calculates the available height for children
+func getAvailableHeight(node *Node) float64 {
+	if node.Height.Type == FixedType || node.Height.Type == FitType || (node.Height.Type == GrowType && node.Height.Value > 0) {
+		return node.Height.Value - node.Padding[0] - node.Padding[2]
+	}
+	return 0
+}
+
+// distributeGrowHeights distributes available height to grow children
+func distributeGrowHeights(node *Node, availableHeight float64) {
+	if availableHeight <= 0 {
+		setGrowChildrenHeight(node.Children, 0)
+		return
+	}
+
+	if node.Direction == TopToBottom {
+		distributeVerticalGrowHeights(node, availableHeight)
+	} else {
+		setGrowChildrenHeight(node.Children, availableHeight)
+	}
+}
+
+// distributeVerticalGrowHeights handles height distribution for vertical layouts
+func distributeVerticalGrowHeights(node *Node, availableHeight float64) {
+	usedHeight, growCount := calculateUsedHeightAndGrowCount(node)
+
+	if growCount == 0 {
+		return
+	}
+
+	remainingHeight := availableHeight - usedHeight
+	if remainingHeight > 0 {
+		growHeight := remainingHeight / float64(growCount)
+		setGrowChildrenHeight(node.Children, math.Max(0, growHeight))
+	} else {
+		setGrowChildrenHeight(node.Children, 0)
+	}
+}
+
+// calculateUsedHeightAndGrowCount calculates space used by non-grow children and counts grow children
+func calculateUsedHeightAndGrowCount(node *Node) (usedHeight float64, growCount int) {
+	for _, child := range node.Children {
+		if child.Height.Type == GrowType {
+			growCount++
+		} else {
+			usedHeight += getActualHeight(child)
+		}
+	}
+
+	if len(node.Children) > 1 {
+		usedHeight += node.ChildGap * float64(len(node.Children)-1)
+	}
+	return
+}
+
+// setGrowChildrenHeight sets height for all grow children
+func setGrowChildrenHeight(children []*Node, height float64) {
+	for _, child := range children {
+		if child.Height.Type == GrowType {
+			child.Height.Value = height
+		}
 	}
 }
 
@@ -381,100 +391,128 @@ func shrinkHeights(node *Node) {
 
 // Pass 6: Calculate positions and apply alignments
 func calculatePositions(node *Node) {
-	// Set root position if not set
-	if node.Parent == nil {
-		// Root node starts at origin
-		node.Position.X = 0
-		node.Position.Y = 0
-	}
-
-	// Calculate positions for children
-	var currentX, currentY float64
-
-	// Start from the padded area
-	contentX := node.Position.X + node.Padding[3] // left padding
-	contentY := node.Position.Y + node.Padding[0] // top padding
-	contentWidth := node.Width.Value - node.Padding[1] - node.Padding[3]
-	contentHeight := node.Height.Value - node.Padding[0] - node.Padding[2]
-
-	if node.Direction == LeftToRight {
-		// Calculate total content width for alignment
-		var totalContentWidth float64
-		for i, child := range node.Children {
-			totalContentWidth += getActualWidth(child)
-			if i < len(node.Children)-1 {
-				totalContentWidth += node.ChildGap
-			}
-		}
-
-		// Apply horizontal alignment
-		switch node.Horizontal {
-		case Left:
-			currentX = contentX
-		case Center:
-			currentX = contentX + (contentWidth-totalContentWidth)/2
-		case Right:
-			currentX = contentX + contentWidth - totalContentWidth
-		}
-
-		// Position children horizontally
-		for _, child := range node.Children {
-			// Apply vertical alignment for each child
-			switch node.Vertical {
-			case Top:
-				currentY = contentY
-			case Middle:
-				currentY = contentY + (contentHeight-getActualHeight(child))/2
-			case Bottom:
-				currentY = contentY + contentHeight - getActualHeight(child)
-			}
-
-			child.Position.X = currentX
-			child.Position.Y = currentY
-			currentX += getActualWidth(child) + node.ChildGap
-		}
-	} else {
-		// TopToBottom direction
-		// Calculate total content height for alignment
-		var totalContentHeight float64
-		for i, child := range node.Children {
-			totalContentHeight += getActualHeight(child)
-			if i < len(node.Children)-1 {
-				totalContentHeight += node.ChildGap
-			}
-		}
-
-		// Apply vertical alignment
-		switch node.Vertical {
-		case Top:
-			currentY = contentY
-		case Middle:
-			currentY = contentY + (contentHeight-totalContentHeight)/2
-		case Bottom:
-			currentY = contentY + contentHeight - totalContentHeight
-		}
-
-		// Position children vertically
-		for _, child := range node.Children {
-			// Apply horizontal alignment for each child
-			switch node.Horizontal {
-			case Left:
-				currentX = contentX
-			case Center:
-				currentX = contentX + (contentWidth-getActualWidth(child))/2
-			case Right:
-				currentX = contentX + contentWidth - getActualWidth(child)
-			}
-
-			child.Position.X = currentX
-			child.Position.Y = currentY
-			currentY += getActualHeight(child) + node.ChildGap
-		}
-	}
+	initRootPosition(node)
+	positionChildren(node)
 
 	// Recursively calculate positions for children
 	for _, child := range node.Children {
 		calculatePositions(child)
+	}
+}
+
+// initRootPosition sets the root node position to origin
+func initRootPosition(node *Node) {
+	if node.Parent == nil {
+		node.Position.X = 0
+		node.Position.Y = 0
+	}
+}
+
+// contentArea holds the calculated content area bounds
+type contentArea struct {
+	x, y, width, height float64
+}
+
+// getContentArea calculates the content area after padding
+func getContentArea(node *Node) contentArea {
+	return contentArea{
+		x:      node.Position.X + node.Padding[3],
+		y:      node.Position.Y + node.Padding[0],
+		width:  node.Width.Value - node.Padding[1] - node.Padding[3],
+		height: node.Height.Value - node.Padding[0] - node.Padding[2],
+	}
+}
+
+// positionChildren positions all children based on direction and alignment
+func positionChildren(node *Node) {
+	if len(node.Children) == 0 {
+		return
+	}
+
+	content := getContentArea(node)
+
+	if node.Direction == LeftToRight {
+		positionChildrenHorizontally(node, content)
+	} else {
+		positionChildrenVertically(node, content)
+	}
+}
+
+// calculateTotalChildrenWidth calculates total width of children including gaps
+func calculateTotalChildrenWidth(node *Node) float64 {
+	var total float64
+	for i, child := range node.Children {
+		total += getActualWidth(child)
+		if i < len(node.Children)-1 {
+			total += node.ChildGap
+		}
+	}
+	return total
+}
+
+// calculateTotalChildrenHeight calculates total height of children including gaps
+func calculateTotalChildrenHeight(node *Node) float64 {
+	var total float64
+	for i, child := range node.Children {
+		total += getActualHeight(child)
+		if i < len(node.Children)-1 {
+			total += node.ChildGap
+		}
+	}
+	return total
+}
+
+// getAlignedX calculates the X position based on horizontal alignment
+func getAlignedX(horizontal Horizontal, contentX, contentWidth, totalWidth float64) float64 {
+	switch horizontal {
+	case Center:
+		return contentX + (contentWidth-totalWidth)/2
+	case Right:
+		return contentX + contentWidth - totalWidth
+	default:
+		return contentX
+	}
+}
+
+// getAlignedY calculates the Y position based on vertical alignment
+func getAlignedY(vertical Vertical, contentY, contentHeight, totalHeight float64) float64 {
+	switch vertical {
+	case Middle:
+		return contentY + (contentHeight-totalHeight)/2
+	case Bottom:
+		return contentY + contentHeight - totalHeight
+	default:
+		return contentY
+	}
+}
+
+// positionChildrenHorizontally positions children in a horizontal layout
+func positionChildrenHorizontally(node *Node, content contentArea) {
+	totalWidth := calculateTotalChildrenWidth(node)
+	currentX := getAlignedX(node.Horizontal, content.x, content.width, totalWidth)
+
+	for _, child := range node.Children {
+		childHeight := getActualHeight(child)
+		currentY := getAlignedY(node.Vertical, content.y, content.height, childHeight)
+
+		child.Position.X = currentX
+		child.Position.Y = currentY
+		currentX += getActualWidth(child) + node.ChildGap
+	}
+}
+
+// positionChildrenVertically positions children in a vertical layout
+func positionChildrenVertically(node *Node, content contentArea) {
+	totalHeight := calculateTotalChildrenHeight(node)
+	currentY := getAlignedY(node.Vertical, content.y, content.height, totalHeight)
+
+	for _, child := range node.Children {
+		childWidth := getActualWidth(child)
+		currentX := getAlignedX(node.Horizontal, content.x, content.width, childWidth)
+
+		child.Position.X = currentX
+		child.Position.Y = currentY
+		currentY += getActualHeight(child) + node.ChildGap
 	}
 }
 
@@ -534,13 +572,7 @@ func wrapTextToWidth(text string, maxWidth float64, fontSize float64, fontType s
 
 	face := getFontFace(fontType, fontSize)
 	if face == nil {
-		// Fallback to character-based wrapping if font not available
-		charWidth := fontSize * 0.6
-		maxCharsPerLine := int(maxWidth / charWidth)
-		if maxCharsPerLine <= 0 {
-			return text
-		}
-		return wrapTextByCharCount(text, maxCharsPerLine)
+		return wrapTextWithFallback(text, maxWidth, fontSize)
 	}
 	defer face.Close()
 
@@ -549,41 +581,37 @@ func wrapTextToWidth(text string, maxWidth float64, fontSize float64, fontType s
 		return text
 	}
 
+	return wrapWordsToWidth(words, maxWidth, face)
+}
+
+// wrapTextWithFallback wraps text using character count when font is not available
+func wrapTextWithFallback(text string, maxWidth, fontSize float64) string {
+	charWidth := fontSize * 0.6
+	maxCharsPerLine := int(maxWidth / charWidth)
+	if maxCharsPerLine <= 0 {
+		return text
+	}
+	return wrapTextByCharCount(text, maxCharsPerLine)
+}
+
+// wrapWordsToWidth wraps words to fit within maxWidth using font metrics
+func wrapWordsToWidth(words []string, maxWidth float64, face font.Face) string {
 	var result strings.Builder
 	var currentLine strings.Builder
 	var currentLineWidth float64
 
+	spaceWidth := measureGlyph(face, ' ')
+
 	for _, word := range words {
-		// Measure word width
-		var wordWidth float64
-		for _, r := range word {
-			advance, ok := face.GlyphAdvance(r)
-			if ok {
-				wordWidth += float64(advance) / 64.0
-			}
-		}
+		wordWidth := measureWord(face, word)
+		shouldWrap := currentLine.Len() > 0 && currentLineWidth+spaceWidth+wordWidth > maxWidth
 
-		// Measure space width (if not first word on line)
-		var spaceWidth float64
-		if currentLine.Len() > 0 {
-			advance, ok := face.GlyphAdvance(' ')
-			if ok {
-				spaceWidth = float64(advance) / 64.0
-			}
-		}
-
-		// Check if adding this word would exceed the line width
-		if currentLine.Len() > 0 && currentLineWidth+spaceWidth+wordWidth > maxWidth {
-			// Start a new line
-			if result.Len() > 0 {
-				result.WriteString("\n")
-			}
-			result.WriteString(currentLine.String())
+		if shouldWrap {
+			appendLine(&result, currentLine.String())
 			currentLine.Reset()
 			currentLine.WriteString(word)
 			currentLineWidth = wordWidth
 		} else {
-			// Add word to current line
 			if currentLine.Len() > 0 {
 				currentLine.WriteString(" ")
 				currentLineWidth += spaceWidth
@@ -595,13 +623,36 @@ func wrapTextToWidth(text string, maxWidth float64, fontSize float64, fontType s
 
 	// Add the last line
 	if currentLine.Len() > 0 {
-		if result.Len() > 0 {
-			result.WriteString("\n")
-		}
-		result.WriteString(currentLine.String())
+		appendLine(&result, currentLine.String())
 	}
 
 	return result.String()
+}
+
+// measureGlyph measures the width of a single glyph
+func measureGlyph(face font.Face, r rune) float64 {
+	advance, ok := face.GlyphAdvance(r)
+	if ok {
+		return float64(advance) / 64.0
+	}
+	return 0
+}
+
+// measureWord measures the width of a word
+func measureWord(face font.Face, word string) float64 {
+	var width float64
+	for _, r := range word {
+		width += measureGlyph(face, r)
+	}
+	return width
+}
+
+// appendLine appends a line to the result with proper newline handling
+func appendLine(result *strings.Builder, line string) {
+	if result.Len() > 0 {
+		result.WriteString("\n")
+	}
+	result.WriteString(line)
 }
 
 // wrapTextByCharCount is a fallback function for character-based wrapping

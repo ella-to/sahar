@@ -72,28 +72,46 @@ func renderNode(pdf *fpdf.Fpdf, node *Node) error {
 
 // renderBox renders a box node (draws a rectangle)
 func renderBox(pdf *fpdf.Fpdf, node *Node) error {
+	// Skip rendering if no visual properties are set
+	hasBorder := node.Border > 0
+	hasBackground := node.BackgroundColor != ""
+
+	if !hasBorder && !hasBackground {
+		return nil
+	}
+
 	x := node.Position.X
 	y := node.Position.Y
 	width := node.Width.Value
 	height := node.Height.Value
 
-	// Set line width and color for the box border
-	pdf.SetLineWidth(node.Border)
+	// Determine draw style based on what's set
+	drawStyle := ""
 
-	r, g, b, err := hexToRGB(node.BorderColor, "#000000")
-	if err != nil {
-		return fmt.Errorf("invalid border color: %w", err)
+	if hasBackground {
+		r, g, b, err := hexToRGB(node.BackgroundColor, "")
+		if err != nil {
+			return fmt.Errorf("invalid background color: %w", err)
+		}
+		pdf.SetFillColor(r, g, b)
+		drawStyle = "F"
 	}
-	pdf.SetDrawColor(r, g, b) // Set border color
 
-	r, g, b, err = hexToRGB(node.BackgroundColor, "#FFFFFF")
-	if err != nil {
-		return fmt.Errorf("invalid background color: %w", err)
+	if hasBorder {
+		pdf.SetLineWidth(node.Border)
+		r, g, b, err := hexToRGB(node.BorderColor, "#000000")
+		if err != nil {
+			return fmt.Errorf("invalid border color: %w", err)
+		}
+		pdf.SetDrawColor(r, g, b)
+		if drawStyle == "F" {
+			drawStyle = "FD"
+		} else {
+			drawStyle = "D"
+		}
 	}
-	pdf.SetFillColor(r, g, b) // Set background color
 
-	// Draw rectangle (border only, no fill for now)
-	pdf.Rect(x, y, width, height, "FD")
+	pdf.Rect(x, y, width, height, drawStyle)
 
 	return nil
 }
@@ -147,6 +165,7 @@ func renderTextLines(pdf *fpdf.Fpdf, node *Node) error {
 	startY := calculateVerticalPosition(node, lines, lineSpacing, lineHeight)
 
 	for i, line := range lines {
+		// Skip rendering empty lines but maintain line position
 		if line == "" {
 			continue
 		}
@@ -199,12 +218,14 @@ func calculateHorizontalPosition(pdf *fpdf.Fpdf, node *Node, line string) float6
 		lineX = x + node.Padding[3]
 	}
 
-	// Ensure text doesn't go outside the node bounds
-	if lineX < x {
-		lineX = x
-	}
-	if lineX+textWidth > x+width {
-		lineX = x + width - textWidth
+	// Ensure text doesn't go outside the node bounds (only clamp if width is positive)
+	if width > 0 {
+		if lineX < x {
+			lineX = x
+		}
+		if textWidth < width && lineX+textWidth > x+width {
+			lineX = x + width - textWidth
+		}
 	}
 
 	return lineX
@@ -332,7 +353,7 @@ func detectImageType(filepath string) (string, error) {
 	buf := make([]byte, 512)
 	_, err = file.Read(buf)
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("failed to read image file: %w", err)
 	}
 
 	// Detect MIME type
