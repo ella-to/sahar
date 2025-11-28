@@ -24,6 +24,10 @@ func LoadFonts(src ...string) error {
 		name := src[i]
 		path := src[i+1]
 
+		if name == "" || path == "" || fontCache[name] != nil {
+			continue // Skip empty names/paths or already loaded fonts
+		}
+
 		font, err := os.ReadFile(path)
 		if err != nil {
 			return fmt.Errorf("failed to load font %s from %s: %w", name, path, err)
