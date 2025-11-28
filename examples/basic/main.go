@@ -10,7 +10,6 @@ func Header(companyName string) *sahar.Node {
 	return sahar.Box(
 		sahar.Direction(sahar.LeftToRight),
 		sahar.Alignment(sahar.Left, sahar.Middle),
-		sahar.BorderColor("#ffffff"),
 		sahar.ChildGap(10),
 
 		sahar.Image(
@@ -20,8 +19,7 @@ func Header(companyName string) *sahar.Node {
 
 		sahar.Box(
 			sahar.Direction(sahar.TopToBottom),
-			sahar.BorderColor("#ffffff"),
-			sahar.ChildGap(2),
+			sahar.ChildGap(10),
 
 			// Children
 			sahar.Text(
@@ -48,10 +46,9 @@ func Main() *sahar.Node {
 		sahar.Alignment(sahar.Right, sahar.Bottom),
 
 		sahar.Box(
-			// sahar.BorderColor("#ffffff"),
 			sahar.Direction(sahar.TopToBottom),
 			sahar.Alignment(sahar.Right, sahar.Middle),
-			sahar.ChildGap(2),
+			sahar.ChildGap(6),
 
 			sahar.Text(
 				"Full Name",
