@@ -123,7 +123,10 @@ func renderText(pdf *fpdf.Fpdf, node *Node) error {
 	}
 
 	if node.Border > 0 {
-		renderBox(pdf, node)
+		err := renderBox(pdf, node)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := setupTextFont(pdf, node); err != nil {
@@ -159,10 +162,16 @@ func setupTextColor(pdf *fpdf.Fpdf, node *Node) error {
 // renderTextLines handles the rendering of multiple text lines
 func renderTextLines(pdf *fpdf.Fpdf, node *Node) error {
 	lines := strings.Split(node.Value, "\n")
-	_, lineHeight := pdf.GetFontSize()
-	lineSpacing := lineHeight * 1.2
+	_, fontPtSize := pdf.GetFontSize()
 
-	startY := calculateVerticalPosition(node, lines, lineSpacing, lineHeight)
+	// Approximate ascender height (where baseline should be from top of text)
+	// Most fonts have ascender at ~75-80% of em-square
+	ascender := fontPtSize * 0.75
+
+	// Line spacing for multiple lines
+	lineSpacing := fontPtSize * 1.2
+
+	startY := calculateVerticalPosition(node, lines, lineSpacing, ascender, fontPtSize)
 
 	for i, line := range lines {
 		// Skip rendering empty lines but maintain line position
@@ -176,20 +185,28 @@ func renderTextLines(pdf *fpdf.Fpdf, node *Node) error {
 }
 
 // calculateVerticalPosition calculates the starting Y position based on vertical alignment
-func calculateVerticalPosition(node *Node, lines []string, lineSpacing, lineHeight float64) float64 {
+func calculateVerticalPosition(node *Node, lines []string, lineSpacing, ascender, fontSize float64) float64 {
 	y := node.Position.Y
 	height := node.Height.Value
-	totalTextHeight := float64(len(lines)) * lineSpacing
 
+	// Calculate total text height matching measureTextHeight logic
+	var totalTextHeight float64
+	if len(lines) == 1 {
+		totalTextHeight = fontSize // Single line uses just fontSize
+	} else {
+		totalTextHeight = fontSize + float64(len(lines)-1)*lineSpacing
+	}
+
+	// Baseline offset from top of text block is the ascender
 	switch node.Vertical {
 	case Top:
-		return y + lineHeight
+		return y + ascender
 	case Middle:
-		return y + (height-totalTextHeight)/2 + lineHeight
+		return y + (height-totalTextHeight)/2 + ascender
 	case Bottom:
-		return y + height - totalTextHeight + lineHeight
+		return y + height - totalTextHeight + ascender
 	default:
-		return y + lineHeight
+		return y + ascender
 	}
 }
 
@@ -234,7 +251,10 @@ func calculateHorizontalPosition(pdf *fpdf.Fpdf, node *Node, line string) float6
 // renderImage renders an image node (placeholder implementation)
 func renderImage(pdf *fpdf.Fpdf, node *Node) error {
 	if node.Border > 0 {
-		renderBox(pdf, node)
+		err := renderBox(pdf, node)
+		if err != nil {
+			return err
+		}
 	}
 
 	x := node.Position.X

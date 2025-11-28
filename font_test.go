@@ -36,7 +36,7 @@ func TestLoadFonts(t *testing.T) {
 		// Create a temp file with invalid font data
 		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "invalid.ttf")
-		err := os.WriteFile(tmpFile, []byte("not a font"), 0644)
+		err := os.WriteFile(tmpFile, []byte("not a font"), 0o644)
 		if err != nil {
 			t.Fatalf("failed to create temp file: %v", err)
 		}

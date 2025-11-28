@@ -421,7 +421,7 @@ func TestDetectImageType(t *testing.T) {
 		// Create a temp file with text content
 		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "test.txt")
-		err := os.WriteFile(tmpFile, []byte("this is not an image"), 0644)
+		err := os.WriteFile(tmpFile, []byte("this is not an image"), 0o644)
 		if err != nil {
 			t.Fatalf("failed to create temp file: %v", err)
 		}
@@ -442,7 +442,7 @@ func TestDetectImageType(t *testing.T) {
 
 		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "test.png")
-		err := os.WriteFile(tmpFile, pngData, 0644)
+		err := os.WriteFile(tmpFile, pngData, 0o644)
 		if err != nil {
 			t.Fatalf("failed to create temp file: %v", err)
 		}
@@ -463,7 +463,7 @@ func TestDetectImageType(t *testing.T) {
 
 		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "test.jpg")
-		err := os.WriteFile(tmpFile, jpgData, 0644)
+		err := os.WriteFile(tmpFile, jpgData, 0o644)
 		if err != nil {
 			t.Fatalf("failed to create temp file: %v", err)
 		}
@@ -484,7 +484,7 @@ func TestDetectImageType(t *testing.T) {
 
 		tmpDir := t.TempDir()
 		tmpFile := filepath.Join(tmpDir, "test.gif")
-		err := os.WriteFile(tmpFile, gifData, 0644)
+		err := os.WriteFile(tmpFile, gifData, 0o644)
 		if err != nil {
 			t.Fatalf("failed to create temp file: %v", err)
 		}

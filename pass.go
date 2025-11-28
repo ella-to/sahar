@@ -548,20 +548,30 @@ func measureTextWidth(text string, fontSize float64, fontType string) float64 {
 // measureTextHeight measures the height of text using the specified font
 func measureTextHeight(text string, fontSize float64, fontType string) float64 {
 	face := getFontFace(fontType, fontSize)
+	lines := strings.Count(text, "\n") + 1
+
 	if face == nil {
 		// Fallback to approximation if font not available
-		lines := strings.Count(text, "\n") + 1
-		return fontSize * 1.2 * float64(lines)
+		// Use fontSize for the first line, then add lineSpacing for additional lines
+		if lines == 1 {
+			return fontSize
+		}
+		return fontSize + float64(lines-1)*fontSize*1.2
 	}
 	defer face.Close()
 
 	metrics := face.Metrics()
-	lineHeight := float64(metrics.Height) / 64.0 // Convert from fixed.Int26_6 to float64
+	// Ascender + Descender gives us the actual text height
+	ascender := float64(metrics.Ascent) / 64.0
+	descender := float64(-metrics.Descent) / 64.0 // Descent is negative
+	lineHeight := float64(metrics.Height) / 64.0
 
-	// Count lines in text
-	lines := strings.Count(text, "\n") + 1
-
-	return lineHeight * float64(lines)
+	if lines == 1 {
+		// Single line: just the actual glyph height (ascender + descender)
+		return ascender + descender
+	}
+	// Multiple lines: first line height + (n-1) * line spacing
+	return (ascender + descender) + float64(lines-1)*lineHeight
 }
 
 // wrapTextToWidth wraps text to fit within the specified width
